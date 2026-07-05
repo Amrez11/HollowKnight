@@ -18,14 +18,16 @@ public class SaveCard extends Table {
     public SaveCard(GameSave gameSave) {
         this.gameSave = gameSave;
         Skin skin=GameAssetManager.skin;
+        TextButton.TextButtonStyle textButtonStyle =GameAssetManager.textButtonStyle;
+        Label.LabelStyle labelStyle=GameAssetManager.labelStyle;
         skin.setScale(1/2f);
 
         defaults().space(15);
         pad(0);
-        Label nameLabel= new Label(gameSave.saveName(),skin);
-        Label progressLabel=new Label(Integer.toString(gameSave.hoursPlayed())+"hours",skin);
-        TextButton loadButten=new TextButton("load",skin);
-        TextButton deleteButten=new TextButton("delete",skin);
+        Label nameLabel= new Label(gameSave.saveName(),labelStyle);
+        Label progressLabel=new Label(Integer.toString(gameSave.hoursPlayed())+"hours",labelStyle);
+        TextButton loadButten=new TextButton("load",textButtonStyle);
+        TextButton deleteButten=new TextButton("delete",textButtonStyle);
 
 
         add(nameLabel);

@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.Manager.UiManager;
@@ -12,8 +13,12 @@ import io.github.some_example_name.Manager.UiManager;
 public class Modal extends Table {
     protected Skin skin;
     private  Table wrapperTable;
+    protected TextButton.TextButtonStyle textButtonStyle;
     public Modal() {
         skin= GameAssetManager.skin;
+        textButtonStyle=GameAssetManager.textButtonStyle;
+
+
         wrapperTable=new Table();
         wrapperTable.setTouchable(Touchable.enabled);
         setTouchable(Touchable.enabled);
@@ -38,7 +43,7 @@ public class Modal extends Table {
             }
         });
 
-        setBackground(skin.getDrawable("window"));
+
         pad(10);
     }
 

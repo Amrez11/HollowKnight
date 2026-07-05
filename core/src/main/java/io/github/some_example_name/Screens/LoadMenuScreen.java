@@ -2,6 +2,8 @@ package io.github.some_example_name.Screens;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.some_example_name.Manager.UiManager;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -15,21 +17,22 @@ import io.github.some_example_name.model.costumActors.SaveCard;
 
 public class LoadMenuScreen extends AbstractScreen {
     private SpriteBatch batch;
+    private Texture background;
 
     @Override
     public void show() {
         super.show();
-
         Stack stack=new Stack();
 
 
 
-        Table backBtnWrapper=new Table();
-        backBtnWrapper.bottom().left().pad(2);
-        TextButton backBtn=new TextButton("back",skin);
-        backBtnWrapper.add(backBtn).bottom().left();
 
-
+        background = new Texture("h/Menu/vheart_save_Switch.png");
+        rootTable.setBackground(
+            new TextureRegionDrawable(
+                new TextureRegion(background)
+            )
+        );
 
         Table saveListWrapper=new Table();
         Table saveList=new Table();
@@ -40,13 +43,14 @@ public class LoadMenuScreen extends AbstractScreen {
         }
 
         saveListWrapper.add(saveList).size( 300,200);
-
-
-
-
         stack.add(saveListWrapper);
+
+        Table backBtnWrapper=new Table();
+        backBtnWrapper.bottom().left().pad(10);
+        TextButton backBtn=new TextButton("back",textButtonStyle);
+        backBtnWrapper.add(backBtn).width(100);
         stack.add(backBtnWrapper);
-        rootTable.add(stack);
+
 
         backBtn.addListener(new ClickListener(){
             @Override
@@ -55,6 +59,16 @@ public class LoadMenuScreen extends AbstractScreen {
                 UiManager.setScreen(new MainMenuScreen());
             }
         });
+        rootTable.add(stack).grow();
+        stage.setDebugAll(true);
 
+    }
+
+    @Override
+    public void render(float delta) {
+
+
+        stage.act(delta);
+        stage.draw();
     }
 }

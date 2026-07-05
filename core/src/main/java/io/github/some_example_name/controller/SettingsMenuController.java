@@ -1,14 +1,18 @@
-package io.github.some_example_name.fir.controller;
+package io.github.some_example_name.controller;
+
+
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
+import io.github.some_example_name.Manager.UiManager;
+import io.github.some_example_name.Screens.MainMenuScreen;
 import io.github.some_example_name.fir.controller.view.StartGameV;
 import io.github.some_example_name.fir.controller.view.KeyBindingMenuV;
 
-public class SettingsMenuC {
+public class SettingsMenuController {
 
-    private final Game game;
+
     private Preferences prefs;
     private float musicVolume;
     private float sfxVolume;
@@ -17,11 +21,9 @@ public class SettingsMenuC {
     private boolean sfxMuted;
     private float preMuteMusicVolume;
     private float preMuteSfxVolume;
-    private static SettingsMenuC instance;
+    private static SettingsMenuController instance;
 
-    public SettingsMenuC(Game game) {
-        this.game = game;
-
+    public SettingsMenuController() {
         prefs = Gdx.app.getPreferences("HollowKnightSettings");
         musicVolume = prefs.getFloat("musicVolume", 0.5f);
         sfxVolume = prefs.getFloat("sfxVolume", 0.5f);
@@ -138,14 +140,14 @@ public class SettingsMenuC {
 
     // --- Navigation ---
     public void openKeyBindings() {
-        game.setScreen(new KeyBindingMenuV(game));
+
     }
 
     public void goBack() {
-        game.setScreen(new StartGameV(game));
+        UiManager.setScreen(new MainMenuScreen());
     }
 
-    public static SettingsMenuC getInstance() {
+    public static SettingsMenuController getInstance() {
         return instance;
     }
 }

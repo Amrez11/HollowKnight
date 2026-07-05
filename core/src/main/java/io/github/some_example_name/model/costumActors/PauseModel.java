@@ -7,10 +7,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 public class PauseModel extends Modal{
     public PauseModel(){
         super();
-        TextButton resumeBtn=new TextButton("Resume",skin);
-        TextButton settingsBtn=new TextButton("Settings",skin);
-        TextButton guideBtn=new TextButton("Guide",skin);
-        TextButton exitBtn=new TextButton("exit",skin);
+        TextButton resumeBtn=new TextButton("Resume",textButtonStyle);
+        TextButton settingsBtn=new TextButton("Settings",textButtonStyle);
+        TextButton guideBtn=new TextButton("Guide",textButtonStyle);
+        TextButton exitBtn=new TextButton("exit",textButtonStyle);
 
 
         defaults().space(5);

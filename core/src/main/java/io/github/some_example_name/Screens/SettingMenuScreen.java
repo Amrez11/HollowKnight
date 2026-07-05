@@ -1,8 +1,7 @@
-package io.github.some_example_name.fir.controller.view;
+package io.github.some_example_name.Screens;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -23,33 +22,31 @@ import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
+import io.github.some_example_name.controller.SettingsMenuController;
 import io.github.some_example_name.fir.controller.SettingsMenuC;
 import io.github.some_example_name.fir.controller.utility.BrightnessOverlay;
 
-public class SettingsMenuV extends ScreenAdapter  {
+public class SettingMenuScreen extends AbstractScreen{
 
-    private final Game game;
-    private final SettingsMenuC controller;
-    private Stage stage;
-    private SpriteBatch batch;
-    private Viewport viewport;
+    private final SettingsMenuController controller;
+
+
+
     private Texture background;
 
-    public SettingsMenuV(Game game) {
-        this.game = game;
-        this.controller = SettingsMenuC.getInstance();
+    public SettingMenuScreen(SettingsMenuController controller) {
+        this.controller = controller;
     }
 
     @Override
     public void show() {
-        viewport = new FitViewport(1920, 1080);
-        viewport.apply();
-
-        batch = new SpriteBatch();
+        super.show();
         background = new Texture("h/Menu/vheart_save_Switch.png");
-
-        stage = new Stage(viewport, batch);
+        rootTable.setBackground(
+            new TextureRegionDrawable(
+                new TextureRegion(background)
+            )
+        );
         Gdx.input.setInputProcessor(stage);
 
         // --- Generate font ---
@@ -64,17 +61,14 @@ public class SettingsMenuV extends ScreenAdapter  {
         smallParam.size = 36;
         BitmapFont smallFont = generator.generateFont(smallParam);  // You'll need to regenerate or reuse
         generator.dispose();
-        // --- Create label style ---
-        Label.LabelStyle labelStyle = new Label.LabelStyle();
-        labelStyle.font = font;
-        labelStyle.fontColor = Color.WHITE;
+
 
         // ============================================
         // CREATE PREMIUM SLIDER STYLE
         // ============================================
 
-        int trackWidth = 80;
-        int trackHeight = 16;
+        int trackWidth = 400;
+        int trackHeight = 28;
         Pixmap trackPixmap = new Pixmap(trackWidth, trackHeight, Pixmap.Format.RGBA8888);
 
         trackPixmap.setColor(new Color(0.2f, 0.2f, 0.2f, 1));
@@ -103,7 +97,7 @@ public class SettingsMenuV extends ScreenAdapter  {
         filledPixmap.dispose();
         NinePatch filledNinePatch = new NinePatch(filledTexture, 8, 8, 8, 8);
 
-        int knobSize = 28;
+        int knobSize = 24;
 
         Pixmap knobPixmap = new Pixmap(knobSize, knobSize, Pixmap.Format.RGBA8888);
         knobPixmap.setColor(new Color(1f, 0.84f, 0f, 1));
@@ -324,7 +318,7 @@ public class SettingsMenuV extends ScreenAdapter  {
 
 // ---- SFX ROW ----
         table.add(sfxLabel).padRight(20);
-        table.add(sfxSlider).width(400).height(40).padRight(20);
+        table.add(sfxSlider).width(430).height(40).padRight(20);
         table.add(sfxValueLabel).width(80).padRight(30);
         table.add(sfxMuteButton).width(130).height(55).padRight(65);
         table.add(resetSfxButton).width(110).height(55).row();
@@ -358,23 +352,17 @@ public class SettingsMenuV extends ScreenAdapter  {
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);;
 
-        viewport.apply();
-
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        batch.draw(background, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
-        batch.end();
 
         stage.act(delta);
         stage.draw();
-        BrightnessOverlay.apply(batch, viewport);  // ← ADD THIS LINE
+
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        stage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -385,7 +373,7 @@ public class SettingsMenuV extends ScreenAdapter  {
     @Override
     public void dispose() {
         stage.dispose();
-        batch.dispose();
+
         background.dispose();
     }
 }
