@@ -15,6 +15,8 @@ public class Entity implements IDamageable {
     public static final float HITBOX_WIDTH    = HITBOX_RIGHT_X - HITBOX_LEFT_X;
     public static final float HITBOX_HEIGHT   = HITBOX_TOP_Y  - HITBOX_BOTTOM_Y;
 
+    private boolean isOnBoss;
+
     private static final int MAX_HP   = 9;
     private static final int MAX_SOUL = 99;
     private int hp   = MAX_HP;
@@ -61,6 +63,7 @@ public class Entity implements IDamageable {
 
     public void update(float delta) {
         movementLogic.update(delta);
+
 
         // Cast lock must tick every frame regardless of invincibility, otherwise
         // getting hit mid-cast freezes the player's movement lock indefinitely.
@@ -208,5 +211,13 @@ public class Entity implements IDamageable {
 
     public void setFlashDuration(float flashDuration) {
         this.flashDuration = flashDuration;
+    }
+
+    public boolean isOnBoss() {
+        return isOnBoss;
+    }
+
+    public void setOnBoss(boolean onBoss) {
+        isOnBoss = onBoss;
     }
 }

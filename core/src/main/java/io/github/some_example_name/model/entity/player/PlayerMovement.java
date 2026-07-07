@@ -14,11 +14,11 @@ public class PlayerMovement {
 
     // ── Movement ──────────────────────────────────────────────────────────────
     private static final float RUN_SPEED  = 300f;
-    private static final float JUMP_SPEED = 1200f;
+    private static final float JUMP_SPEED = 600f;
     private static final float DASH_SPEED = 900f;
 
 
-    private static final float MIN_JUMP_SPEED = 300f;
+    private static final float MIN_JUMP_SPEED = 400f;
 
     // ── Timers / state ────────────────────────────────────────────────────────
     private float dashTimer         =  0.4f;

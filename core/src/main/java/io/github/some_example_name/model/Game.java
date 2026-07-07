@@ -46,14 +46,10 @@ public class Game {
         playerCollision = new CollisionLogic(player, solidBlocks);
 
 
-        spawnEnemy(EnemyEntity.crawler(new Vector2(1270.21f, 7000f)));
-        spawnEnemy(EnemyEntity.sentry(new Vector2(1400f, 7000f)));
-        spawnEnemy(EnemyEntity.flyer(new Vector2(1270.21f, 6800f)));
-        spawnEnemy(EnemyEntity.laserFlyer(new Vector2(1500f, 6800f)));
-        spawnEnemy(EnemyEntity.boss(new Vector2(1270.21f, 4400f)));
+
     }
 
-    private void spawnEnemy(EnemyEntity enemy) {
+    public void spawnEnemy(EnemyEntity enemy) {
         enemies.add(enemy);
         enemyCollisions.add(new EnemyCollisionLogic(enemy, solidBlocks, enemies));
     }
@@ -64,6 +60,9 @@ public class Game {
         // 1. Player
         player.update(delta);
         playerCollision.checkCollisions();
+        if (player.isOnBoss()) {
+            player.getPosition().set(this.getEnemies().get(4).getPosition());
+        }
 
         // 2. Enemies — ONE loop only; drain boss hitboxes in the same pass
         for (int i = 0; i < enemies.size; i++) {

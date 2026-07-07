@@ -22,7 +22,7 @@ public class TiledMapHelper {
     public Array<SolidBlock> getSolidBlock(){
         Array<SolidBlock> solidBlocks=new Array<>();
 
-        MapLayer layer =tiledMap.getLayers().get("logic");
+        MapLayer layer =tiledMap.getLayers().get("Logic");
         for (MapObject object : layer.getObjects()){
             if (object instanceof RectangleMapObject){
                 Rectangle rect=((RectangleMapObject) object).getRectangle();

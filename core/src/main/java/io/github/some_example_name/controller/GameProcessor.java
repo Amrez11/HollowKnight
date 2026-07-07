@@ -2,6 +2,7 @@ package io.github.some_example_name.controller;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Manager.UiManager;
 import io.github.some_example_name.Screens.MainMenuScreen;
 import io.github.some_example_name.model.Game;
@@ -47,6 +48,7 @@ public class GameProcessor implements InputProcessor {
             case Input.Keys.X     -> game.getPlayer().setAttackPressed(true);
             case Input.Keys.Q     -> game.getPlayer().setVengefulSpirit(true);
             case Input.Keys.R     -> game.getPlayer().setHowlingWraith(true);
+            case Input.Keys.J     ->game.getPlayer().setOnBoss(true);
         }
         return false;
     }
@@ -60,6 +62,7 @@ public class GameProcessor implements InputProcessor {
             case Input.Keys.W     -> game.getPlayer().setDashPressed(false);
             case Input.Keys.E     -> game.getPlayer().setFocus(false);
             case Input.Keys.X     -> game.getPlayer().setAttackPressed(false);
+            case Input.Keys.J     ->game.getPlayer().setOnBoss(false);
             // Q, R: one-shot, no keyUp needed
         }
         return false;

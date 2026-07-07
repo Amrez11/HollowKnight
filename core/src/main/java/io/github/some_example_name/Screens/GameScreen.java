@@ -8,8 +8,11 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.MapLayer;
+import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -39,8 +42,8 @@ public class GameScreen extends AbstractScreen{
     private Hud hud;
 
 
-    private final int[] background={0};
-    private final int[] foreground={1,2,3,4,5};
+    private final int[] background={0,1,2,3};
+    private final int[] foreground={4,5};
 
     public GameScreen(Game game) {
         this.game = game;
@@ -51,7 +54,7 @@ public class GameScreen extends AbstractScreen{
     public void show() {
         super.show();
         mapHelper=new TiledMapHelper();
-        map=mapHelper.load("/Users/amrez/Desktop/map1/untitled.tmx");
+        map=mapHelper.load("/Users/amrez/Desktop/map1/betterrrr.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map);
         solidBlocks = mapHelper.getSolidBlock();
         game.init(solidBlocks);
@@ -71,6 +74,16 @@ public class GameScreen extends AbstractScreen{
         inputMultiplexer.addProcessor(stage);
         inputMultiplexer.addProcessor(gameProcessor);
         Gdx.input.setInputProcessor(inputMultiplexer);
+        MapLayer spawnLayer=map.getLayers().get("Logic");
+        MapObject spawnPoint=spawnLayer.getObjects().get("playerSpawnPoint");
+        float spawnX=spawnPoint.getProperties().get("x", Float.class);
+        float spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.getPlayer().setPosition(new Vector2(spawnX,5700));
+        game.spawnEnemy(EnemyEntity.crawler(new Vector2(1270.21f, 7000f)));
+        game.spawnEnemy(EnemyEntity.sentry(new Vector2(1400f, 7000f)));
+        game.spawnEnemy(EnemyEntity.flyer(new Vector2(1270.21f, 6800f)));
+        game.spawnEnemy(EnemyEntity.laserFlyer(new Vector2(1500f, 6800f)));
+        game.spawnEnemy(EnemyEntity.boss(new Vector2(8800, 7400f)));
 
     }
 

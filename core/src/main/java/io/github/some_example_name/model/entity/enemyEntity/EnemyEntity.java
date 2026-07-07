@@ -131,4 +131,6 @@ public class EnemyEntity implements IDamageable {
     public void          setCurrentAnimation(AnimationType a)                { this.currentAnimation = a; }
     public float         getStateTime()                                      { return stateTime; }
     public void          resetStateTime()                                    { this.stateTime = 0f; }
+
+
 }
