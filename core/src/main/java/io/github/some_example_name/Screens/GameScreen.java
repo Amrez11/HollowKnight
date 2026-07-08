@@ -83,7 +83,8 @@ public class GameScreen extends AbstractScreen{
         game.spawnEnemy(EnemyEntity.sentry(new Vector2(1400f, 7000f)));
         game.spawnEnemy(EnemyEntity.flyer(new Vector2(1270.21f, 6800f)));
         game.spawnEnemy(EnemyEntity.laserFlyer(new Vector2(1500f, 6800f)));
-        game.spawnEnemy(EnemyEntity.boss(new Vector2(8800, 7000f)));
+        game.spawnEnemy(EnemyEntity.boss(new Vector2(9100, 7400f)));
+        io.github.some_example_name.Manager.AchievementManager.resetSession();
 
     }
 

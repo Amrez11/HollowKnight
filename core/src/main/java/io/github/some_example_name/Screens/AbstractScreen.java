@@ -90,5 +90,9 @@ public abstract  class AbstractScreen  implements Screen {
         return modalStack;
     }
 
+    public Stack getToastStack() {
+        return toastStack;
+    }
+
 
 }

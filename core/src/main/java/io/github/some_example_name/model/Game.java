@@ -57,7 +57,7 @@ public class Game {
     // ─────────────────────────────────────────────────────────────────────────
 
     public void update(float delta) {
-        // 1. Player
+        io.github.some_example_name.Manager.AchievementManager.updateTimer(delta);
         player.update(delta);
         playerCollision.checkCollisions();
         if (player.isOnBoss()) {
@@ -67,12 +67,25 @@ public class Game {
         // 2. Enemies — ONE loop only; drain boss hitboxes in the same pass
         for (int i = 0; i < enemies.size; i++) {
             EnemyEntity e = enemies.get(i);
+            if (e.isDead() && !e.isDeathProcessed()) {
+                String type = "CRAWLER";
+                if (e.getBehavior() instanceof BossBehavior) type = "BOSS";
+                else if (e.getBehavior() instanceof LaserFlyerBehavior) type = "LASER_FLYER";
+                else if (e.getBehavior() instanceof CrystalFlyerBehavior) type = "FLYER";
+                e.setDeathProcessed(true);
+                io.github.some_example_name.Manager.AchievementManager.onEnemyDefeated(type);
+                if (type.equals("BOSS")) {
+                    io.github.some_example_name.Manager.AchievementManager.onGameCompleted(); // Triggers Speedrun/Completion achievements
+                    io.github.some_example_name.Manager.UiManager.setScreen(new io.github.some_example_name.Screens.VictoryScreen());
+                }
+
+            }
             if (e.isDead()) continue;
 
             e.update(delta, player);
             enemyCollisions.get(i).checkCollisions();
 
-            // Collect any attack hitboxes the boss spawned this frame
+
             if (e.getBehavior() instanceof BossBehavior) {
                 enemyHitboxes.addAll(((BossBehavior) e.getBehavior()).drainPendingHitboxes());
             } else if (e.getBehavior() instanceof CrystalFlyerBehavior) {

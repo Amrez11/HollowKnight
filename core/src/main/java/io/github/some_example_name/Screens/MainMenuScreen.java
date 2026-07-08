@@ -13,7 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import io.github.some_example_name.controller.SettingsMenuController;
-import io.github.some_example_name.fir.controller.SettingsMenuC;
+
 
 public class MainMenuScreen extends AbstractScreen   {
     private Texture background;
@@ -77,7 +77,14 @@ public class MainMenuScreen extends AbstractScreen   {
                 UiManager.setScreen(new SettingMenuScreen(new SettingsMenuController()));
             }
         });
+        achievements.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                UiManager.setScreen(new AchievementsScreen());
+            }
+        });
         stage.setDebugAll(true);
+
 
 
     }

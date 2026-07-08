@@ -27,6 +27,7 @@ public class EnemyEntity implements IDamageable {
     private final int maxHp;
     private       int hp;
     private       boolean dead = false;
+    private       boolean deathProcessed = false; // <-- ADDED: Prevents multi-firing achievements
 
     private static final float I_FRAME_DURATION = 0f;
     private              float invincibilityTimer = 0f;
@@ -77,7 +78,7 @@ public class EnemyEntity implements IDamageable {
     }
 
     public void update(float delta, Entity player) {
-        System.out.println("entityEnemy"+hp);
+        System.out.println("entityEnemy" + hp);
         if (dead) return;
 
         if (invincibilityTimer > 0f) {
@@ -90,7 +91,10 @@ public class EnemyEntity implements IDamageable {
 
     @Override
     public void takeDamage(int amount) {
-        if (dead ) return;
+        if (dead) return;
+        if (behavior instanceof BossBehavior && ((BossBehavior) behavior).isStunned()) {
+            return;
+        }
         hp = Math.max(0, hp - amount);
         invincibilityTimer = I_FRAME_DURATION;
         if (hp == 0) dead = true;
@@ -132,5 +136,8 @@ public class EnemyEntity implements IDamageable {
     public float         getStateTime()                                      { return stateTime; }
     public void          resetStateTime()                                    { this.stateTime = 0f; }
 
+    // ── Achievement Tracking Flags ────────────────────────────────────────────
+    public boolean isDeathProcessed() { return deathProcessed; }
+    public void setDeathProcessed(boolean v) { deathProcessed = v; }
 
 }

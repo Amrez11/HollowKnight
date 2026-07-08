@@ -7,8 +7,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 import io.github.some_example_name.Manager.UiManager;
 import io.github.some_example_name.Screens.MainMenuScreen;
-import io.github.some_example_name.fir.controller.view.StartGameV;
-import io.github.some_example_name.fir.controller.view.KeyBindingMenuV;
+
 
 public class SettingsMenuController {
 

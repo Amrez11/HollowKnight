@@ -61,7 +61,10 @@ public enum AnimationType {
     HUD_SOUL_EMPTY(1,  "animation/HUD/SoulOrb_Empty.png"),
     HUD_SOUL_HALF(1,   "animation/HUD/SoulOrb_Half.png"),
     HUD_SOUL_FULL(1,   "animation/HUD/SoulOrb_Full.png"),
-    HUD_SOUL_SHINE(5,  "animation/HUD/FilledHealthShine.png")
+    HUD_SOUL_SHINE(5,  "animation/HUD/FilledHealthShine.png"),
+    // ── Boss Attack VFX ───────────────────────────────────────────────────────
+    BOSS_SLAM_EFFECT(6, "animation/Effects/attackBoss.png"),      // Effect for Mace/Leap landings
+    BOSS_SHOCKWAVE(6, "animation/Effects/attackBoss.png"),      // The traveling wave from Power Slam
 
 
 

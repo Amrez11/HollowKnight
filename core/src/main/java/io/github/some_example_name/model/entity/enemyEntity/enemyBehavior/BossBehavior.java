@@ -250,17 +250,13 @@ public class BossBehavior implements IEnemyBehavior {
 
     private void spawnMaceHitbox() {
         float bossFloor = self.getHitboxBottom();
-        float x;
-        if (self.isLookingRight()) {
-            x = self.getHitboxRight();
-        } else {
-            x = self.getHitboxLeft() - MACE_HB_W;
-        }
+        float x = self.isLookingRight() ? self.getHitboxRight() : self.getHitboxLeft() - MACE_HB_W;
+
         pendingHitboxes.add(new AttackHitbox(
             x, bossFloor,
             MACE_HB_W, MACE_HB_H,
             MACE_DAMAGE, MACE_HB_LIFETIME,
-            AnimationType.BOSS_MACE_SLAM,
+            AnimationType.BOSS_SLAM_EFFECT, // <--- FIXED: No longer uses Boss body animation
             self.isLookingRight(),
             new Vector2(0, 0)
         ));
@@ -272,7 +268,7 @@ public class BossBehavior implements IEnemyBehavior {
             cx - LEAP_HB_W / 2f, self.getHitboxBottom(),
             LEAP_HB_W, LEAP_HB_H,
             LEAP_DAMAGE, LEAP_HB_LIFETIME,
-            AnimationType.BOSS_LEAP_FALL,
+            AnimationType.BOSS_SLAM_EFFECT, // <--- FIXED
             self.isLookingRight(),
             new Vector2(0, 0)
         ));
@@ -282,29 +278,32 @@ public class BossBehavior implements IEnemyBehavior {
         float cx    = (self.getHitboxLeft() + self.getHitboxRight()) / 2f;
         float floor = self.getHitboxBottom();
 
+        // Central Impact Dust
         pendingHitboxes.add(new AttackHitbox(
             cx - LEAP_HB_W / 2f, floor,
             LEAP_HB_W, LEAP_HB_H,
             SHOCK_DAMAGE, MACE_HB_LIFETIME,
-            AnimationType.BOSS_POWER_IMPACT,
+            AnimationType.BOSS_SLAM_EFFECT, // <--- FIXED
             self.isLookingRight(),
             new Vector2(0, 0)
         ));
 
+        // Left Traveling Shockwave
         pendingHitboxes.add(new AttackHitbox(
             cx - SHOCK_W, floor,
             SHOCK_W, SHOCK_H,
             SHOCK_DAMAGE, SHOCK_LIFETIME,
-            AnimationType.BOSS_POWER_IMPACT,
+            AnimationType.BOSS_SHOCKWAVE,   // <--- FIXED
             false,
             new Vector2(-SHOCK_SPEED, 0)
         ));
 
+        // Right Traveling Shockwave
         pendingHitboxes.add(new AttackHitbox(
             cx, floor,
             SHOCK_W, SHOCK_H,
             SHOCK_DAMAGE, SHOCK_LIFETIME,
-            AnimationType.BOSS_POWER_IMPACT,
+            AnimationType.BOSS_SHOCKWAVE,   // <--- FIXED
             true,
             new Vector2(SHOCK_SPEED, 0)
         ));
