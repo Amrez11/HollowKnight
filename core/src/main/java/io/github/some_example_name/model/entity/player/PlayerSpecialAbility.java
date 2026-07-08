@@ -1,5 +1,6 @@
 package io.github.some_example_name.model.entity.player;
 
+import io.github.some_example_name.Manager.CharmManager;
 import io.github.some_example_name.model.enums.AnimationType;
 
 public class PlayerSpecialAbility {
@@ -75,7 +76,7 @@ public class PlayerSpecialAbility {
             entity.setCurrentAnimation(AnimationType.KNIGHT_Focus);
             focusTimer += delta;
 
-            if (focusTimer >= FOCUS_DURATION) {
+            if (focusTimer >= FOCUS_DURATION * CharmManager.getFocusDurationMultiplier()) {
                 entity.setSoul(entity.getSoul() - SOUL_COST);
                 entity.setHp(Math.min(
                     entity.getHp() + FOCUS_HEALTH_GAIN,

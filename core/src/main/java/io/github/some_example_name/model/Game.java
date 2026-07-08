@@ -2,6 +2,7 @@ package io.github.some_example_name.model;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import io.github.some_example_name.Manager.CharmManager;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.DamageResolver;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyCollisionLogic;
@@ -27,6 +28,7 @@ public class Game {
 
     private Array<SolidBlock> solidBlocks;
     private boolean wasAttacking = false;
+    private boolean paused = false;
 
     // ── Visual-only draw offsets ──────────────────────────────────────────────
     private static final float NAIL_DRAW_OFFSET_X_RIGHT     = -180f;
@@ -41,12 +43,12 @@ public class Game {
     // ─────────────────────────────────────────────────────────────────────────
 
     public void loadRoom() {
+        enemies.clear();
+        enemyCollisions.clear();
+
         player = new Entity();
         player.setPosition(new Vector2(1270.21f, 6800f));
         playerCollision = new CollisionLogic(player, solidBlocks);
-
-
-
     }
 
     public void spawnEnemy(EnemyEntity enemy) {
@@ -113,9 +115,10 @@ public class Game {
             float spawnX = facingRight
                 ? player.getHitboxRight()
                 : player.getHitboxLeft() - 50f;
+            int nailDamage = Math.round(1 * CharmManager.getNailDamageMultiplier());
             AttackHitbox hb = AttackHitbox.nailSwing(
                 spawnX, player.getHitboxBottom() + 10f,
-                50f, 30f, 1, facingRight);
+                50f, 30f, nailDamage, facingRight);
             hb.drawOffsetX = facingRight ? NAIL_DRAW_OFFSET_X_RIGHT : NAIL_DRAW_OFFSET_X_LEFT;
             hb.drawOffsetY = NAIL_DRAW_OFFSET_Y;
             playerHitboxes.add(hb);
@@ -154,6 +157,9 @@ public class Game {
         this.solidBlocks = solidBlocks;
         playerCollision  = new CollisionLogic(player, solidBlocks);
     }
+
+    public boolean isPaused()             { return paused; }
+    public void    setPaused(boolean paused) { this.paused = paused; }
 
     public Entity              getPlayer()        { return player; }
     public Array<EnemyEntity>  getEnemies()       { return enemies; }

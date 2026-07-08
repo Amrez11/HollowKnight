@@ -98,8 +98,10 @@ public class GameScreen extends AbstractScreen{
     @Override
     public void render(float delta) {
 
-        game.update(delta);
-        hud.update(delta, game.getPlayer());
+        if (!game.isPaused()) {
+            game.update(delta);
+            hud.update(delta, game.getPlayer());
+        }
         target.set(game.getPlayer().getPosition().x,game.getPlayer().getPosition().y+120,0);
         camera.position.lerp(target,0.1f);
 

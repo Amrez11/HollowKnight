@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Manager.UiManager;
 import io.github.some_example_name.Screens.MainMenuScreen;
 import io.github.some_example_name.model.Game;
+import io.github.some_example_name.model.costumActors.CharmMenuModal;
 import io.github.some_example_name.model.costumActors.PauseModel;
 
 /**
@@ -19,12 +20,14 @@ import io.github.some_example_name.model.costumActors.PauseModel;
  *  X      – Attack (nail swing)
  *  Q      – Vengeful Spirit (one-shot)
  *  R      – Howling Wraiths (one-shot)
+ *  I      – inventory (charms)
  *  ESCAPE – pause
  * ────────────────────────────────────────
  */
 public class GameProcessor implements InputProcessor {
 
     private final Game game;
+    private CharmMenuModal charmMenu;
 
     public GameProcessor(Game game) {
         this.game = game;
@@ -49,8 +52,24 @@ public class GameProcessor implements InputProcessor {
             case Input.Keys.Q     -> game.getPlayer().setVengefulSpirit(true);
             case Input.Keys.R     -> game.getPlayer().setHowlingWraith(true);
             case Input.Keys.J     ->game.getPlayer().setOnBoss(true);
+            case Input.Keys.I     -> toggleCharmMenu();
         }
         return false;
+    }
+
+    private void toggleCharmMenu() {
+        if (charmMenu == null) {
+            game.setPaused(true);
+            charmMenu = new CharmMenuModal() {
+                @Override public void onClose() {
+                    game.setPaused(false);
+                    charmMenu = null;
+                }
+            };
+            charmMenu.show();
+        } else {
+            charmMenu.hide();
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package io.github.some_example_name.model.entity.player;
 
+import io.github.some_example_name.Manager.CharmManager;
 import io.github.some_example_name.model.enums.AnimationType;
 
 public class PlayerAttackLogic {
@@ -29,7 +30,7 @@ public class PlayerAttackLogic {
         if (entity.isAttackPressed() && !attackInitiated && !isAttacking) {
             attackInitiated = true;
             isAttacking     = true;
-            attackTimer     = ATTACK_DURATION;
+            attackTimer     = ATTACK_DURATION * CharmManager.getNailSlashDurationMultiplier();
             entity.setAttacking(true);
         }
         if (!entity.isAttackPressed()) {

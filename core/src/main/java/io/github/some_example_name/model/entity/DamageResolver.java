@@ -2,8 +2,11 @@ package io.github.some_example_name.model.entity;
 
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
+import io.github.some_example_name.Manager.CharmManager;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
+import io.github.some_example_name.model.entity.player.PlayerAttackLogic;
+import io.github.some_example_name.model.enums.AnimationType;
 
 public class DamageResolver {
 
@@ -29,7 +32,7 @@ public class DamageResolver {
         tickAndPruneHitboxes(delta, playerHitboxes);
         tickAndPruneHitboxes(delta, enemyHitboxes);
 
-        resolvePlayerAttacks(playerHitboxes, enemies);
+        resolvePlayerAttacks(playerHitboxes, enemies, player);
         resolveEnemyHitboxesVsPlayer(enemyHitboxes, player);
         resolveEnemyContactVsPlayer(enemies, player);
     }
@@ -37,7 +40,8 @@ public class DamageResolver {
     // ── Player attacks → enemies ──────────────────────────────────────────────
 
     private void resolvePlayerAttacks(Array<AttackHitbox> hitboxes,
-                                      Array<EnemyEntity>  enemies) {
+                                      Array<EnemyEntity>  enemies,
+                                      Entity player) {
         for (AttackHitbox atk : hitboxes) {
             for (EnemyEntity enemy : enemies) {
                 if (enemy.isDead()) continue;
@@ -45,6 +49,13 @@ public class DamageResolver {
                 if (atk.bounds.overlaps(enemy.getHitboxRect())) {
                     enemy.takeDamage(atk.damage);
                     atk.hitEnemies.add(enemy);
+
+                    // Only nail hits grant soul — spells cost soul, they don't earn it.
+                    if (atk.animationType == AnimationType.NAIL_SLASH) {
+                        int soulGain = Math.round(
+                            PlayerAttackLogic.SOUL_PER_HIT * CharmManager.getSoulMultiplier());
+                        player.addSoul(soulGain);
+                    }
                 }
             }
         }

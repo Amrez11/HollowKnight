@@ -1,7 +1,9 @@
 package io.github.some_example_name.model.entity.player;
 
 import com.badlogic.gdx.math.Vector2;
+import io.github.some_example_name.Manager.CharmManager;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.Charm;
 
 public class PlayerMovement {
 
@@ -21,7 +23,8 @@ public class PlayerMovement {
     private static final float MIN_JUMP_SPEED = 400f;
 
     // ── Timers / state ────────────────────────────────────────────────────────
-    private float dashTimer         =  0.4f;
+    private static final float BASE_DASH_DURATION = 0.4f;
+    private float dashTimer         =  BASE_DASH_DURATION;
     private float dashCooldownTimer = -1.5f;
 
 
@@ -45,6 +48,7 @@ public class PlayerMovement {
         if (entity.isDashPressed() && dashCooldownTimer <= 0f) {
             entity.setDash(true);
             entity.setDashPressed(false);
+
         }
 
         // ── Dash update (early-return branch) ─────────────────────────────────
@@ -182,11 +186,21 @@ public class PlayerMovement {
         if (entity.isDash() && dashTimer > 0f) {
             dashTimer -= delta;
         }
+
         if (dashTimer < 0f) {
             entity.setDash(false);
-            dashCooldownTimer = 0.6f;
-            dashTimer = 0.4f;
+
+            // Check if the specific charm is equipped.
+            // (Replace 'Charm.YOUR_DASH_CHARM' with your actual charm enum value)
+            if (CharmManager.isEquipped(Charm.DASHMASTER)) {
+                dashCooldownTimer = 0.8f;
+            } else {
+                dashCooldownTimer = 1.5f;
+            }
+
+            dashTimer = BASE_DASH_DURATION;
         }
+
         if (dashCooldownTimer > 0f) {
             dashCooldownTimer -= delta;
         }
