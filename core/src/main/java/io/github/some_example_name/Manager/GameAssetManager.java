@@ -1,6 +1,7 @@
 package io.github.some_example_name.Manager;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Array;
 import io.github.some_example_name.model.enums.Achievement;
 import io.github.some_example_name.model.enums.AnimationType;
 
@@ -20,8 +22,24 @@ public class GameAssetManager {
     public static Skin skin;
     public static Label.LabelStyle labelStyle;
     public static TextButton.TextButtonStyle textButtonStyle;
+    // [FIXED] smallFont used to be generated and immediately discarded — never
+    // assigned anywhere. Exposed here so dialogue/HUD text has something
+    // smaller than the 48pt menu font to render with.
+    public static BitmapFont dialogueFont;
     public static final HashMap<AnimationType, Animation<TextureRegion>> animationMap=new HashMap<>();
     public static final HashMap<Achievement, TextureRegionDrawable> achievementIcons = new HashMap<>();
+
+    // ── Zote voice SFX ─────────────────────────────────────────────────────
+    // NOTE: these files don't exist in the repo yet — add short growl/grumble
+    // clips at these paths (assets/audio/zote/) before they'll actually play.
+    // Loading is defensive (per-file try/catch) so a missing clip never
+    // crashes startup — Zote's dialogue still works, just silently.
+    private static final String[] ZOTE_GROWL_PATHS = {
+        "audio/zote/ZoteGrowl1.ogg",
+        "audio/zote/ZoteGrowl2.ogg",
+        "audio/zote/ZoteGrowl3.ogg"
+    };
+    public static final Array<Sound> zoteGrowlSounds = new Array<>();
 
     public static void init(){
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -31,8 +49,8 @@ public class GameAssetManager {
         BitmapFont font = generator.generateFont(param);
 
         FreeTypeFontGenerator.FreeTypeFontParameter smallParam = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        smallParam.size = 36;
-        BitmapFont smallFont = generator.generateFont(smallParam);
+        smallParam.size = 28;
+        dialogueFont = generator.generateFont(smallParam);
         generator.dispose();
 
         labelStyle = new Label.LabelStyle();
@@ -52,6 +70,20 @@ public class GameAssetManager {
             Texture tex = new Texture(Gdx.files.internal(a.getImagePath()));
             achievementIcons.put(a, new TextureRegionDrawable(new TextureRegion(tex)));
         }
+
+        for (String path : ZOTE_GROWL_PATHS) {
+            try {
+                zoteGrowlSounds.add(Gdx.audio.newSound(Gdx.files.internal(path)));
+            } catch (Exception e) {
+                Gdx.app.error("GameAssetManager", "Missing Zote growl SFX: " + path, e);
+            }
+        }
+    }
+
+    /** Plays one of Zote's growl SFX at random. No-op if none loaded. */
+    public static void playRandomZoteGrowl() {
+        if (zoteGrowlSounds.size == 0) return;
+        zoteGrowlSounds.random().play();
     }
 
     private static void loadAnimation(AnimationType type){
@@ -96,6 +128,9 @@ public class GameAssetManager {
             case BOSS_POWER_IMPACT:           return 0.40f / 8f;  // Fits impact window
             case BOSS_STUN:                   return 1/8f;        // Smooth, slow stunned looping rhythm
 
+            case ZOTE_IDLE:                   return 1/5f;        // Slow, exaggerated breathing
+            case ZOTE_ENRAGE_ATTACK:          return 0.9f / 6f;   // Fits ZoteEntity.ENRAGE_DURATION
+
             default:                          return 1/4f;
         }
     }
@@ -119,6 +154,7 @@ public class GameAssetManager {
             case BOSS_POWER_RISE:
             case BOSS_POWER_FALL:
             case BOSS_POWER_IMPACT:
+            case ZOTE_ENRAGE_ATTACK:
                 return Animation.PlayMode.NORMAL; // These actions should only execute once per swing/jump
 
             case BOSS_CHARGE:

@@ -12,6 +12,8 @@ public class AttackHitbox {
     public final int       damage;
     public       float     lifetime;
     public boolean hasHitPlayer = false;
+    /** One-hit-per-swing guard for the nail hitting NPCs (e.g. Zote) that aren't in Game.enemies. */
+    public boolean hasHitZote = false;
 
     public final AnimationType animationType;
     public       float         stateTime = 0f;

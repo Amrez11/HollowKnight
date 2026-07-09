@@ -31,4 +31,23 @@ public class TiledMapHelper {
         }
         return solidBlocks;
     }
+    // Inside io.github.some_example_name.model.TiledMapHelper
+
+    public Array<Rectangle> getDeadlyZones() {
+        Array<Rectangle> deadlyZones = new Array<>();
+
+        // Ensure this string matches exactly with the layer name in your TMX file
+        MapLayer layer = tiledMap.getLayers().get("deadly");
+
+        if (layer != null) {
+            for (MapObject object : layer.getObjects()) {
+                if (object instanceof RectangleMapObject) {
+                    // We don't need a custom SolidBlock class here, just the raw Rectangle
+                    Rectangle rect = ((RectangleMapObject) object).getRectangle();
+                    deadlyZones.add(new Rectangle(rect.x, rect.y, rect.width, rect.height));
+                }
+            }
+        }
+        return deadlyZones;
+    }
 }

@@ -20,11 +20,20 @@ public class Entity implements IDamageable {
     private static final int MAX_HP   = 9;
     private static final int MAX_SOUL = 99;
     private int hp   = MAX_HP;
-    private int soul =99;
+    // [FIXED] Soul used to start at 99 == MAX_SOUL, so the meter was always
+    // full and every nail-hit soul gain in DamageResolver was silently
+    // clamped away by setSoul()'s Math.min. Starts empty like the real game.
+    private int soul = 0;
 
     private boolean isInvincible=false;
     private              float flashDuration = 0.1f;
     private boolean focus;
+
+    // ── Dialogue lock (NPC conversations) ───────────────────────────────────
+    // Set true while a dialogue box (e.g. talking to Zote) is open. Entity.update()
+    // short-circuits all movement/attack/ability logic while this is true, mirroring
+    // how isCastLocked() freezes input during spell casts.
+    private boolean dialogueLocked = false;
 
     private boolean howlingWraith;
     private boolean vengefulSpirit;
@@ -62,6 +71,16 @@ public class Entity implements IDamageable {
 
 
     public void update(float delta) {
+        // While a dialogue box is open, freeze the player completely: no
+        // movement, no attack, no abilities. stateTime still ticks so the
+        // idle animation keeps looping instead of visibly freezing.
+        if (dialogueLocked) {
+            velocity.set(0f, 0f);
+            currentAnimation = AnimationType.KNIGHT_IDLE;
+            stateTime += delta;
+            return;
+        }
+
         movementLogic.update(delta);
 
 
@@ -220,6 +239,9 @@ public class Entity implements IDamageable {
     public void setOnBoss(boolean onBoss) {
         isOnBoss = onBoss;
     }
+
+    public boolean isDialogueLocked()                       { return dialogueLocked; }
+    public void    setDialogueLocked(boolean dialogueLocked) { this.dialogueLocked = dialogueLocked; }
 
     // ── Save/Load ──────────────────────────────────────────────────────────
     /**

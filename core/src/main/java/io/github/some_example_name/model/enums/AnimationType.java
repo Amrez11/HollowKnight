@@ -67,7 +67,8 @@ public enum AnimationType {
     BOSS_SHOCKWAVE(6, "animation/Effects/attackBoss.png"),      // The traveling wave from Power Slam
 
 
-
+    ZOTE_IDLE(5,          "animation/Zote/Idle.png"),
+    ZOTE_ENRAGE_ATTACK(4, "animation/Zote/Attack.png"),
 
     ;
     public final int frameCount;

@@ -100,6 +100,48 @@ public class DamageResolver {
         }
     }
 
+    // Inside io.github.some_example_name.model.entity.DamageResolver
+
+    /**
+     * Call once per frame.
+     * Now includes 'deadlyZones' for environmental hazards.
+     */
+    public void resolve(float delta,
+                        Entity player,
+                        Array<EnemyEntity>  enemies,
+                        Array<AttackHitbox> playerHitboxes,
+                        Array<AttackHitbox> enemyHitboxes,
+                        Array<Rectangle>    deadlyZones) { // <--- Added parameter
+
+        tickPlayerIFrames(delta);
+        player.setDamaged(false);
+        player.setInvincible(playerIFrameTimer > 0f);
+        tickAndPruneHitboxes(delta, playerHitboxes);
+        tickAndPruneHitboxes(delta, enemyHitboxes);
+
+        resolvePlayerAttacks(playerHitboxes, enemies, player);
+        resolveEnemyHitboxesVsPlayer(enemyHitboxes, player);
+        resolveEnemyContactVsPlayer(enemies, player);
+
+        // <--- Added the environmental damage check
+        resolveDeadlyZonesVsPlayer(deadlyZones, player);
+    }
+
+    // ── Environmental Damage → player ─────────────────────────────────────────
+
+    private void resolveDeadlyZonesVsPlayer(Array<Rectangle> deadlyZones, Entity player) {
+        if (isPlayerInvincible()) return; // Don't hurt the player if they have i-frames
+
+        rebuildPlayerRect(player);
+
+        for (Rectangle zone : deadlyZones) {
+            if (playerRect.overlaps(zone)) {
+                hitPlayer(player, 3); // Applies exactly 3 damage as requested
+                return; // Break out early so we only take damage once per frame
+            }
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void tickPlayerIFrames(float delta) {
@@ -111,6 +153,11 @@ public class DamageResolver {
     }
 
     private void hitPlayer(Entity player, int damage) {
+        // [FIXED] A 0-damage hit (e.g. Zote's harmless tantrum swing) should
+        // be a complete no-op for the player — no hurt flash, no i-frames.
+        // Only real damage should trigger the feedback/invincibility window.
+        if (damage <= 0) return;
+
         player.setHp(Math.max(0, player.getHp() - damage));
         player.setDamaged(true);
         player.setFlashDuration(0.1f);

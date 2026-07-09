@@ -22,6 +22,8 @@ import io.github.some_example_name.model.costumActors.PauseModel;
  *  Q      – Vengeful Spirit (one-shot)
  *  R      – Howling Wraiths (one-shot)
  *  I      – inventory (charms)
+ *  F      – interact / talk (Zote)
+ *  ENTER  – advance dialogue
  *  ESCAPE – pause
  * ────────────────────────────────────────
  */
@@ -39,7 +41,18 @@ public class GameProcessor implements InputProcessor {
     @Override
     public boolean keyDown(int keycode) {
         switch (keycode) {
+            case Input.Keys.F -> {
+                if (game.isNearZote() && !game.isZoteDialogueActive()) {
+                    game.interactWithZote();
+                }
+            }
+            case Input.Keys.ENTER -> {
+                if (game.isZoteDialogueActive()) {
+                    game.advanceZoteDialogue();
+                }
+            }
             case Input.Keys.ESCAPE -> {
+                if (game.isZoteDialogueActive()) break; // don't pause mid-conversation
                 game.setPaused(true);                                    // ← new
                 PauseModel pauseModel = new PauseModel() {
                     @Override public void onResume() { game.setPaused(false); this.hide(); }   // ← added setPaused(false)

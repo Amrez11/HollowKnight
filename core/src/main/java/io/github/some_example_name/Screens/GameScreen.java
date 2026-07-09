@@ -12,6 +12,7 @@ import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -26,6 +27,7 @@ import io.github.some_example_name.model.TiledMapHelper;
 import io.github.some_example_name.model.costumActors.Hud;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
+import io.github.some_example_name.model.entity.npc.ZoteEntity;
 import io.github.some_example_name.model.enums.AnimationType;
 
 public class GameScreen extends AbstractScreen{
@@ -42,6 +44,7 @@ public class GameScreen extends AbstractScreen{
     private TiledMapHelper mapHelper;
     private TiledMap map;
     private Array<SolidBlock> solidBlocks;
+    Array<Rectangle> deadlyZones ;
     private OrthographicCamera hudCamera;
     private Hud hud;
 
@@ -74,7 +77,8 @@ public class GameScreen extends AbstractScreen{
         map=mapHelper.load("/Users/amrez/Desktop/map1/betterrrr.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map);
         solidBlocks = mapHelper.getSolidBlock();
-        game.init(solidBlocks);
+        deadlyZones = mapHelper.getDeadlyZones();
+        game.init(solidBlocks,deadlyZones);
         game.loadRoom();
         hudCamera = new OrthographicCamera();
         hudCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -95,12 +99,68 @@ public class GameScreen extends AbstractScreen{
         MapObject spawnPoint=spawnLayer.getObjects().get("playerSpawnPoint");
         float spawnX=spawnPoint.getProperties().get("x", Float.class);
         float spawnY=spawnPoint.getProperties().get("y", Float.class);
-        game.getPlayer().setPosition(new Vector2(spawnX,5000));
-        game.spawnEnemy(EnemyEntity.crawler(new Vector2(1270.21f, 7000f)));
-        game.spawnEnemy(EnemyEntity.sentry(new Vector2(1400f, 7000f)));
-        game.spawnEnemy(EnemyEntity.flyer(new Vector2(1270.21f, 6800f)));
-        game.spawnEnemy(EnemyEntity.laserFlyer(new Vector2(1500f, 6800f)));
-        game.spawnEnemy(EnemyEntity.boss(new Vector2(9100, 7400f)));
+        game.getPlayer().setPosition(new Vector2(spawnX,spawnY));
+
+
+        spawnPoint=spawnLayer.getObjects().get("zoteSpawn");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        Vector2 zotePos = new Vector2(spawnX , spawnY);
+        game.spawnZote(zotePos);
+
+        spawnPoint=spawnLayer.getObjects().get("enemy3");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.flyer(new Vector2(spawnX,spawnY)));
+
+
+        spawnPoint=spawnLayer.getObjects().get("enemy4");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.crawler(new Vector2(spawnX,spawnY)));
+
+        spawnPoint=spawnLayer.getObjects().get("enemy5");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.crawler(new Vector2(spawnX,spawnY)));
+
+
+        spawnPoint=spawnLayer.getObjects().get("enemy6");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.flyer(new Vector2(spawnX,spawnY)));
+
+
+        spawnLayer=map.getLayers().get("boss");
+        spawnPoint=spawnLayer.getObjects().get("enemy1");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.laserFlyer(new Vector2(spawnX,spawnY)));
+
+
+
+        spawnLayer=map.getLayers().get("boss");
+        spawnPoint=spawnLayer.getObjects().get("enemy2");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.sentry(new Vector2(spawnX,spawnY)));
+
+        spawnLayer=map.getLayers().get("boss");
+        spawnPoint=spawnLayer.getObjects().get("bossSpawnPoint");
+        spawnX=spawnPoint.getProperties().get("x", Float.class);
+        spawnY=spawnPoint.getProperties().get("y", Float.class);
+        game.spawnEnemy(EnemyEntity.boss(new Vector2(spawnX,spawnY)));
+
+
+
+
+
+
+
+
+
+
+
         AchievementManager.resetSession();
 
         // Override the freshly-spawned defaults above with the saved run, if any.
@@ -179,6 +239,23 @@ public class GameScreen extends AbstractScreen{
                 h.bounds.width, h.bounds.height);
         }
 
+        // ── Zote (NPC) ──────────────────────────────────────────────────────
+        ZoteEntity zote = game.getZote();
+        if (zote != null) {
+            Animation<TextureRegion> zoteAnim = GameAssetManager.animationMap.get(zote.getCurrentAnimation());
+            TextureRegion zoteFrame = zoteAnim.getKeyFrame(zote.getStateTime());
+            batch.draw(zoteFrame,
+                zote.getPosition().x, zote.getPosition().y,
+                zoteFrame.getRegionWidth()/2f, 0,
+                zoteFrame.getRegionWidth(), zoteFrame.getRegionHeight(),
+                zote.isLookingRight() ? -1 : 1, 1, 0);
+
+            if (game.isNearZote() && !game.isZoteDialogueActive()) {
+                GameAssetManager.dialogueFont.draw(batch, "[F] Talk",
+                    zote.getPosition().x, zote.getHitboxTop() + 40f);
+            }
+        }
+
         batch.end();
         mapRenderer.render(foreground);
 
@@ -212,6 +289,11 @@ public class GameScreen extends AbstractScreen{
             shapeRenderer.rect(h.bounds.x, h.bounds.y, h.bounds.width, h.bounds.height);
         }
 
+        shapeRenderer.setColor(Color.MAGENTA);
+        for (Rectangle r : deadlyZones) {
+            shapeRenderer.rect(r.x, r.y, r.width, r.height);
+        }
+
         shapeRenderer.end();
         // ─────────────────────────────────────────────────────────────────────
 
@@ -219,10 +301,21 @@ public class GameScreen extends AbstractScreen{
         shapeRenderer.setColor(Color.WHITE);
         shapeRenderer.rect(-1000,-200 ,2000,200);
         shapeRenderer.end();
+
         hudCamera.update();
+        if (zote != null && zote.isDialogueActive()) {
+            shapeRenderer.setProjectionMatrix(hudCamera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            zote.getDialogueBox().renderPanel(shapeRenderer);
+            shapeRenderer.end();
+        }
+
         batch.setProjectionMatrix(hudCamera.combined);
         batch.begin();
         hud.render(batch, game.getPlayer());
+        if (zote != null && zote.isDialogueActive()) {
+            zote.getDialogueBox().renderText(batch, GameAssetManager.dialogueFont);
+        }
         batch.end();
 
         super.render(delta);

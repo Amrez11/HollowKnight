@@ -1,5 +1,6 @@
 package io.github.some_example_name.model;
 
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import io.github.some_example_name.Manager.AchievementManager;
@@ -15,6 +16,7 @@ import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.Crysta
 import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.IEnemyBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.LaserFlyerBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.SentryBehavior;
+import io.github.some_example_name.model.entity.npc.ZoteEntity;
 import io.github.some_example_name.model.entity.player.CollisionLogic;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.Achievement;
@@ -36,7 +38,12 @@ public class Game {
 
     private final DamageResolver damageResolver = new DamageResolver();
 
+
+    // Not in `enemies` on purpose — see ZoteEntity's class doc.
+    private ZoteEntity zote;
+
     private Array<SolidBlock> solidBlocks;
+    Array<Rectangle> deadlyZones;
     private boolean wasAttacking = false;
     private boolean paused = false;
 
@@ -66,6 +73,10 @@ public class Game {
         enemyCollisions.add(new EnemyCollisionLogic(enemy, solidBlocks, enemies));
     }
 
+    public void spawnZote(Vector2 pos) {
+        zote = new ZoteEntity(pos);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     public void update(float delta) {
@@ -73,7 +84,7 @@ public class Game {
         player.update(delta);
         playerCollision.checkCollisions();
         if (player.isOnBoss()) {
-            player.getPosition().set(this.getEnemies().get(4).getPosition());
+            player.getPosition().set(this.getEnemies().get(6).getPosition());
         }
 
         // 2. Enemies — ONE loop only; drain boss hitboxes in the same pass
@@ -110,8 +121,16 @@ public class Game {
         // 3. Player attack hitboxes
         populatePlayerHitboxes();
 
+        // 3b. Zote (NPC) — checks nail hits against playerHitboxes itself,
+        // then hands over any attack hitbox it spawned this frame so it goes
+        // through the same rendering/damage pipeline as every other enemy.
+        if (zote != null) {
+            zote.update(delta, player, playerHitboxes);
+            enemyHitboxes.addAll(zote.drainPendingHitboxes());
+        }
+
         // 4. Damage resolution — both hitbox lists
-        damageResolver.resolve(delta, player, enemies, playerHitboxes, enemyHitboxes);
+        damageResolver.resolve(delta, player, enemies, playerHitboxes, enemyHitboxes,deadlyZones);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -163,8 +182,9 @@ public class Game {
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    public void init(Array<SolidBlock> solidBlocks) {
+    public void init(Array<SolidBlock> solidBlocks, Array<Rectangle> deadlyZones) {
         this.solidBlocks = solidBlocks;
+        this.deadlyZones = deadlyZones; // <-- Save the deadly zones
         playerCollision  = new CollisionLogic(player, solidBlocks);
     }
 
@@ -175,6 +195,13 @@ public class Game {
     public Array<EnemyEntity>  getEnemies()       { return enemies; }
     public Array<AttackHitbox> getPlayerHitboxes(){ return playerHitboxes; }
     public Array<AttackHitbox> getEnemyHitboxes() { return enemyHitboxes; }
+
+    // ── Zote (NPC) ────────────────────────────────────────────────────────
+    public ZoteEntity getZote()             { return zote; }
+    public boolean    isNearZote()          { return zote != null && zote.isPlayerInRange(player); }
+    public boolean    isZoteDialogueActive(){ return zote != null && zote.isDialogueActive(); }
+    public void       interactWithZote()    { if (zote != null) zote.tryOpenDialogue(player); }
+    public void       advanceZoteDialogue() { if (zote != null) zote.advanceDialogue(player); }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Save / Load
