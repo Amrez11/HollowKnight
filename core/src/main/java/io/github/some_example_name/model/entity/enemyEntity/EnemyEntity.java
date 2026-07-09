@@ -140,4 +140,17 @@ public class EnemyEntity implements IDamageable {
     public boolean isDeathProcessed() { return deathProcessed; }
     public void setDeathProcessed(boolean v) { deathProcessed = v; }
 
+    // ── Save/Load ──────────────────────────────────────────────────────────
+    /**
+     * Restores hp/alive-state from a save file. Enemies loaded already-dead
+     * have deathProcessed forced true so Game.update() doesn't re-fire their
+     * defeat achievement / victory screen on the next frame.
+     */
+    public void applySavedState(int hp, boolean dead) {
+        this.hp = Math.max(0, Math.min(hp, maxHp));
+        this.dead = dead;
+        this.deathProcessed = dead;
+        this.invincibilityTimer = 0f;
+    }
+
 }

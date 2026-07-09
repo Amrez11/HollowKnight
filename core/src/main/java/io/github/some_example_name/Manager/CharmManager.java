@@ -44,6 +44,20 @@ public class CharmManager {
         return true;
     }
 
+    // ── Save/Load ──────────────────────────────────────────────────────────
+    /** Unequips everything. Used before restoring a saved loadout. */
+    public static void clearAll() {
+        equipped.clear();
+    }
+
+    /**
+     * Equips a charm without the free-notch check, bypassing MAX_NOTCHES.
+     * Only meant for restoring a save that was already valid when written.
+     */
+    public static void equipDirect(Charm charm) {
+        equipped.add(charm);
+    }
+
     // ── Effect multipliers, read by gameplay systems ────────────────────────
 
     public static float getSoulMultiplier() {

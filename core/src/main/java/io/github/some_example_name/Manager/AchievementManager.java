@@ -99,4 +99,23 @@ public class AchievementManager {
     public static int getEnemiesKilledCount() { return enemiesKilledCount; }
     public static int getPlayerDeathCount() { return playerDeathCount; }
     public static float getGameTimer() { return gameTimer; }
+
+    // ── Save/Load ──────────────────────────────────────────────────────────
+    public static Set<Achievement> getUnlockedAchievements() { return unlockedAchievements; }
+    public static Set<String> getEnemiesDefeatedTypes()      { return enemiesDefeated; }
+
+    /**
+     * Restores progress tracking from a save file, replacing (not merging)
+     * the current session's state. Does not re-fire unlock notifications.
+     */
+    public static void restoreState(Set<Achievement> unlocked, Set<String> enemyTypesDefeated,
+                                    int killedCount, int deathCount, float timer) {
+        unlockedAchievements.clear();
+        unlockedAchievements.addAll(unlocked);
+        enemiesDefeated.clear();
+        enemiesDefeated.addAll(enemyTypesDefeated);
+        enemiesKilledCount = killedCount;
+        playerDeathCount   = deathCount;
+        gameTimer          = timer;
+    }
 }

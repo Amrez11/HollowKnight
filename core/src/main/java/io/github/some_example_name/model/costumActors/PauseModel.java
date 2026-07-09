@@ -8,6 +8,7 @@ public class PauseModel extends Modal{
     public PauseModel(){
         super();
         TextButton resumeBtn=new TextButton("Resume",textButtonStyle);
+        TextButton saveBtn=new TextButton("Save",textButtonStyle);
         TextButton settingsBtn=new TextButton("Settings",textButtonStyle);
         TextButton guideBtn=new TextButton("Guide",textButtonStyle);
         TextButton exitBtn=new TextButton("exit",textButtonStyle);
@@ -15,6 +16,7 @@ public class PauseModel extends Modal{
 
         defaults().space(5);
         add(resumeBtn).width(100).row();
+        add(saveBtn).width(100).row();
         add(settingsBtn).width(100).row();
         add(guideBtn).width(100).row();
         add(exitBtn).width(100);
@@ -23,6 +25,12 @@ public class PauseModel extends Modal{
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 onResume();
+            }
+        });
+        saveBtn.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                onSave();
             }
         });
         exitBtn.addListener(new ClickListener(){
@@ -34,6 +42,7 @@ public class PauseModel extends Modal{
 
     }
     public void onResume(){}
+    public void onSave(){}
     public void onExit(){}
 
 }

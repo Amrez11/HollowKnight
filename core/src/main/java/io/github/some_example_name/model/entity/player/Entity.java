@@ -220,4 +220,18 @@ public class Entity implements IDamageable {
     public void setOnBoss(boolean onBoss) {
         isOnBoss = onBoss;
     }
+
+    // ── Save/Load ──────────────────────────────────────────────────────────
+    /**
+     * Clears one-shot/transient combat flags after teleporting the player in
+     * via a save file, so they don't spawn mid-flash, mid-cast-lock, etc.
+     */
+    public void resetTransientCombatState() {
+        this.isInvincible = false;
+        this.damaged = false;
+        this.attacking = false;
+        this.howlingHitTriggered = false;
+        this.vengefulFireTriggered = false;
+        this.flashDuration = 0.1f;
+    }
 }

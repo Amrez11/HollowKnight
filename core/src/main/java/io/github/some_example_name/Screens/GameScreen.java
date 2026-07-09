@@ -16,7 +16,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import io.github.some_example_name.Manager.AchievementManager;
 import io.github.some_example_name.Manager.GameAssetManager;
+import io.github.some_example_name.SaveInfo.GameSaveData;
 import io.github.some_example_name.controller.GameProcessor;
 import io.github.some_example_name.model.Game;
 import io.github.some_example_name.model.SolidBlock;
@@ -33,6 +35,8 @@ public class GameScreen extends AbstractScreen{
     private ShapeRenderer shapeRenderer;
     private GameProcessor gameProcessor;
     private final Game game;
+    private final String slotId;
+    private final GameSaveData saveData;
     Vector3 target = new Vector3();
     private OrthogonalTiledMapRenderer mapRenderer;
     private TiledMapHelper mapHelper;
@@ -45,8 +49,21 @@ public class GameScreen extends AbstractScreen{
     private final int[] background={0,1,2,3};
     private final int[] foreground={4,5};
 
+    /** Fresh, unsaved run — e.g. "play again" from the victory screen. */
     public GameScreen(Game game) {
+        this(game, "quicksave", null);
+    }
+
+    /**
+     * @param slotId   which save slot this playthrough is tied to; the pause
+     *                 menu's Save button writes here.
+     * @param saveData if non-null, the run's state is restored from this save
+     *                 right after the room's default entities are spawned.
+     */
+    public GameScreen(Game game, String slotId, GameSaveData saveData) {
         this.game = game;
+        this.slotId = slotId;
+        this.saveData = saveData;
     }
 
 
@@ -69,7 +86,7 @@ public class GameScreen extends AbstractScreen{
 
         viewport=new ScreenViewport(camera);
         shapeRenderer=new ShapeRenderer();
-        gameProcessor=new GameProcessor(game);
+        gameProcessor=new GameProcessor(game, slotId);
         InputMultiplexer inputMultiplexer=new InputMultiplexer();
         inputMultiplexer.addProcessor(stage);
         inputMultiplexer.addProcessor(gameProcessor);
@@ -78,14 +95,18 @@ public class GameScreen extends AbstractScreen{
         MapObject spawnPoint=spawnLayer.getObjects().get("playerSpawnPoint");
         float spawnX=spawnPoint.getProperties().get("x", Float.class);
         float spawnY=spawnPoint.getProperties().get("y", Float.class);
-        game.getPlayer().setPosition(new Vector2(spawnX,5700));
+        game.getPlayer().setPosition(new Vector2(spawnX,5000));
         game.spawnEnemy(EnemyEntity.crawler(new Vector2(1270.21f, 7000f)));
         game.spawnEnemy(EnemyEntity.sentry(new Vector2(1400f, 7000f)));
         game.spawnEnemy(EnemyEntity.flyer(new Vector2(1270.21f, 6800f)));
         game.spawnEnemy(EnemyEntity.laserFlyer(new Vector2(1500f, 6800f)));
         game.spawnEnemy(EnemyEntity.boss(new Vector2(9100, 7400f)));
-        io.github.some_example_name.Manager.AchievementManager.resetSession();
+        AchievementManager.resetSession();
 
+        // Override the freshly-spawned defaults above with the saved run, if any.
+        if (saveData != null) {
+            game.applySave(saveData);
+        }
     }
 
     @Override
@@ -97,7 +118,7 @@ public class GameScreen extends AbstractScreen{
 
     @Override
     public void render(float delta) {
-
+        delta = Math.min(delta, 1/30f);
         if (!game.isPaused()) {
             game.update(delta);
             hud.update(delta, game.getPlayer());

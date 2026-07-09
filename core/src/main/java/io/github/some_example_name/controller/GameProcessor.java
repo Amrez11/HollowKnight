@@ -3,6 +3,7 @@ package io.github.some_example_name.controller;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.Vector2;
+import io.github.some_example_name.Manager.SaveManager;
 import io.github.some_example_name.Manager.UiManager;
 import io.github.some_example_name.Screens.MainMenuScreen;
 import io.github.some_example_name.model.Game;
@@ -27,19 +28,26 @@ import io.github.some_example_name.model.costumActors.PauseModel;
 public class GameProcessor implements InputProcessor {
 
     private final Game game;
+    private final String slotId;
     private CharmMenuModal charmMenu;
 
-    public GameProcessor(Game game) {
+    public GameProcessor(Game game, String slotId) {
         this.game = game;
+        this.slotId = slotId;
     }
 
     @Override
     public boolean keyDown(int keycode) {
         switch (keycode) {
             case Input.Keys.ESCAPE -> {
+                game.setPaused(true);                                    // ← new
                 PauseModel pauseModel = new PauseModel() {
-                    @Override public void onResume() { this.hide(); }
+                    @Override public void onResume() { game.setPaused(false); this.hide(); }   // ← added setPaused(false)
                     @Override public void onExit()   { UiManager.setScreen(new MainMenuScreen()); }
+                    @Override public void onSave() {
+                        SaveManager.save(game, slotId, slotId);
+                        this.hide();
+                    }
                 };
                 pauseModel.show();
             }
@@ -53,6 +61,8 @@ public class GameProcessor implements InputProcessor {
             case Input.Keys.R     -> game.getPlayer().setHowlingWraith(true);
             case Input.Keys.J     ->game.getPlayer().setOnBoss(true);
             case Input.Keys.I     -> toggleCharmMenu();
+            case Input.Keys.O     -> game.getPlayer().getVelocity().y=1200;
+            case Input.Keys.K     -> game.getPlayer().setPosition(new Vector2(7000,5700));
         }
         return false;
     }
@@ -82,6 +92,7 @@ public class GameProcessor implements InputProcessor {
             case Input.Keys.E     -> game.getPlayer().setFocus(false);
             case Input.Keys.X     -> game.getPlayer().setAttackPressed(false);
             case Input.Keys.J     ->game.getPlayer().setOnBoss(false);
+            case Input.Keys.O     -> game.getPlayer().getVelocity().y=5;
             // Q, R: one-shot, no keyUp needed
         }
         return false;

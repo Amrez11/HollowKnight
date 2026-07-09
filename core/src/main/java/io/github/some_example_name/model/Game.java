@@ -2,16 +2,26 @@ package io.github.some_example_name.model;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import io.github.some_example_name.Manager.AchievementManager;
 import io.github.some_example_name.Manager.CharmManager;
+import io.github.some_example_name.SaveInfo.EnemySaveData;
+import io.github.some_example_name.SaveInfo.GameSaveData;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.DamageResolver;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyCollisionLogic;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.BossBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.CrystalFlyerBehavior;
+import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.IEnemyBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.LaserFlyerBehavior;
+import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.SentryBehavior;
 import io.github.some_example_name.model.entity.player.CollisionLogic;
 import io.github.some_example_name.model.entity.player.Entity;
+import io.github.some_example_name.model.enums.Achievement;
+import io.github.some_example_name.model.enums.Charm;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Game {
 
@@ -165,4 +175,95 @@ public class Game {
     public Array<EnemyEntity>  getEnemies()       { return enemies; }
     public Array<AttackHitbox> getPlayerHitboxes(){ return playerHitboxes; }
     public Array<AttackHitbox> getEnemyHitboxes() { return enemyHitboxes; }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Save / Load
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Maps an enemy's IEnemyBehavior back to the factory-type string used in saves. */
+    private String enemyTypeOf(EnemyEntity e) {
+        IEnemyBehavior b = e.getBehavior();
+        if (b instanceof BossBehavior)        return "BOSS";
+        if (b instanceof LaserFlyerBehavior)  return "LASER_FLYER";
+        if (b instanceof CrystalFlyerBehavior) return "FLYER";
+        if (b instanceof SentryBehavior)      return "SENTRY";
+        return "CRAWLER";
+    }
+
+    private EnemyEntity createEnemyOfType(String type, Vector2 pos) {
+        return switch (type) {
+            case "BOSS"        -> EnemyEntity.boss(pos);
+            case "LASER_FLYER" -> EnemyEntity.laserFlyer(pos);
+            case "FLYER"       -> EnemyEntity.flyer(pos);
+            case "SENTRY"      -> EnemyEntity.sentry(pos);
+            default            -> EnemyEntity.crawler(pos);
+        };
+    }
+
+    /** Snapshots the entire current run — player, charms, progress, and every enemy. */
+    public GameSaveData captureSave(String saveName) {
+        GameSaveData data = new GameSaveData();
+        data.saveName = saveName;
+        data.timestamp = System.currentTimeMillis();
+        data.playTimeSeconds = AchievementManager.getGameTimer();
+
+        data.playerX = player.getPosition().x;
+        data.playerY = player.getPosition().y;
+        data.hp = player.getHp();
+        data.soul = player.getSoul();
+        data.lookingRight = player.isLookingRight();
+
+        for (Charm c : Charm.values()) {
+            if (CharmManager.isEquipped(c)) data.equippedCharms.add(c.name());
+        }
+
+        for (Achievement a : Achievement.values()) {
+            if (AchievementManager.isUnlocked(a)) data.unlockedAchievements.add(a.name());
+        }
+        data.enemyTypesDefeated.addAll(AchievementManager.getEnemiesDefeatedTypes());
+        data.enemiesKilledCount = AchievementManager.getEnemiesKilledCount();
+        data.playerDeathCount   = AchievementManager.getPlayerDeathCount();
+        data.gameTimer          = AchievementManager.getGameTimer();
+
+        for (EnemyEntity e : enemies) {
+            data.enemies.add(new EnemySaveData(
+                enemyTypeOf(e), e.getPosition().x, e.getPosition().y, e.getHp(), e.isDead()));
+        }
+        return data;
+    }
+
+    /**
+     * Restores a full run from a save. Assumes init()/loadRoom() (and the
+     * default room spawns) have already run — this overrides player stats,
+     * charms, progress, and replaces the enemy list with the saved one.
+     */
+    public void applySave(GameSaveData data) {
+        player.getPosition().set(data.playerX, data.playerY);
+        player.setHp(data.hp);
+        player.setSoul(data.soul);
+        player.setLookingRight(data.lookingRight);
+        player.resetTransientCombatState();
+
+        CharmManager.clearAll();
+        for (String name : data.equippedCharms) {
+            try { CharmManager.equipDirect(Charm.valueOf(name)); } catch (IllegalArgumentException ignored) {}
+        }
+
+        Set<Achievement> unlocked = new HashSet<>();
+        for (String name : data.unlockedAchievements) {
+            try { unlocked.add(Achievement.valueOf(name)); } catch (IllegalArgumentException ignored) {}
+        }
+        Set<String> enemiesDefeated = new HashSet<>(data.enemyTypesDefeated);
+        AchievementManager.restoreState(unlocked, enemiesDefeated,
+            data.enemiesKilledCount, data.playerDeathCount, data.gameTimer);
+
+        enemies.clear();
+        enemyCollisions.clear();
+        for (EnemySaveData es : data.enemies) {
+            EnemyEntity e = createEnemyOfType(es.type, new Vector2(es.x, es.y));
+            e.applySavedState(es.hp, es.dead);
+            enemies.add(e);
+            enemyCollisions.add(new EnemyCollisionLogic(e, solidBlocks, enemies));
+        }
+    }
 }
