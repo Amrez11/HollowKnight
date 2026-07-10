@@ -12,6 +12,7 @@ import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -41,7 +42,13 @@ public class GameScreen extends AbstractScreen{
     private final GameSaveData saveData;
     Vector3 target = new Vector3();
     private OrthogonalTiledMapRenderer mapRenderer;
+
+    private Array<Rectangle> cameraBounds;
     private TiledMapHelper mapHelper;
+    private Rectangle bossRoom;
+    private Rectangle bossDoor;
+    private Vector2 bossSpawnPos;
+    private boolean bossFightStarted = false;
     private TiledMap map;
     private Array<SolidBlock> solidBlocks;
     Array<Rectangle> deadlyZones ;
@@ -77,6 +84,7 @@ public class GameScreen extends AbstractScreen{
         map=mapHelper.load("/Users/amrez/Desktop/map1/betterrrr.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map);
         solidBlocks = mapHelper.getSolidBlock();
+        cameraBounds = mapHelper.getCameraBounds();
         deadlyZones = mapHelper.getDeadlyZones();
         game.init(solidBlocks,deadlyZones);
         game.loadRoom();
@@ -145,11 +153,14 @@ public class GameScreen extends AbstractScreen{
         spawnY=spawnPoint.getProperties().get("y", Float.class);
         game.spawnEnemy(EnemyEntity.sentry(new Vector2(spawnX,spawnY)));
 
-        spawnLayer=map.getLayers().get("boss");
-        spawnPoint=spawnLayer.getObjects().get("bossSpawnPoint");
-        spawnX=spawnPoint.getProperties().get("x", Float.class);
-        spawnY=spawnPoint.getProperties().get("y", Float.class);
-        game.spawnEnemy(EnemyEntity.boss(new Vector2(spawnX,spawnY)));
+        bossRoom = mapHelper.getNamedRectangle("boss", "bossRoom");
+        bossDoor = mapHelper.getNamedRectangle("boss", "bossDoor");
+
+        spawnLayer = map.getLayers().get("boss");
+        spawnPoint = spawnLayer.getObjects().get("bossSpawnPoint");
+        spawnX = spawnPoint.getProperties().get("x", Float.class);
+        spawnY = spawnPoint.getProperties().get("y", Float.class);
+        bossSpawnPos = new Vector2(spawnX, spawnY);
 
 
 
@@ -180,11 +191,71 @@ public class GameScreen extends AbstractScreen{
     public void render(float delta) {
         delta = Math.min(delta, 1/30f);
         if (!game.isPaused()) {
+            // --- BOSS TRIGGER LOGIC ---
+            if (!bossFightStarted && bossRoom != null) {
+                float px = game.getPlayer().getPosition().x;
+                float py = game.getPlayer().getPosition().y;
+
+                // If the player steps inside the boss room rectangle
+                if (bossRoom.contains(px, py)) {
+                    bossFightStarted = true;
+
+                    // 1. Lock the door by turning it into a SolidBlock
+                    if (bossDoor != null) {
+                        solidBlocks.add(new SolidBlock(bossDoor.x, bossDoor.y, bossDoor.width, bossDoor.height));
+                        System.out.println("Door locked!");
+                    }
+
+                    // 2. Spawn the boss NOW
+                    game.spawnEnemy(EnemyEntity.boss(bossSpawnPos));
+                    System.out.println("Boss spawned!");
+                }
+            }
+
             game.update(delta);
             hud.update(delta, game.getPlayer());
         }
-        target.set(game.getPlayer().getPosition().x,game.getPlayer().getPosition().y+120,0);
-        camera.position.lerp(target,0.1f);
+        target.set(game.getPlayer().getPosition().x, game.getPlayer().getPosition().y + 120, 0);
+        camera.position.lerp(target, 0.1f);
+
+        // 2. Find which camera bound the player is currently inside
+        Rectangle currentBound = null;
+        float playerX = game.getPlayer().getPosition().x;
+        float playerY = game.getPlayer().getPosition().y;
+
+        for (Rectangle bound : cameraBounds) {
+            if (bound.contains(playerX, playerY)) {
+                currentBound = bound;
+                break;
+            }
+        }
+
+        // 3. Clamp the camera if a bound was found
+        if (currentBound != null) {
+            // Calculate half of the camera's visible width and height, accounting for zoom
+            float camHalfWidth = (camera.viewportWidth * camera.zoom) / 2f;
+            float camHalfHeight = (camera.viewportHeight * camera.zoom) / 2f;
+
+            // X-Axis Clamping
+            if (currentBound.width < camHalfWidth * 2) {
+                // If the room is smaller than the camera view, lock the camera to the room's center
+                camera.position.x = currentBound.x + currentBound.width / 2f;
+            } else {
+                // Otherwise, clamp the camera so the edges don't leave the rectangle
+                float minX = currentBound.x + camHalfWidth;
+                float maxX = currentBound.x + currentBound.width - camHalfWidth;
+                camera.position.x = MathUtils.clamp(camera.position.x, minX, maxX);
+            }
+
+            // Y-Axis Clamping
+            if (currentBound.height < camHalfHeight * 2) {
+                camera.position.y = currentBound.y + currentBound.height / 2f;
+            } else {
+                float minY = currentBound.y + camHalfHeight;
+                float maxY = currentBound.y + currentBound.height - camHalfHeight;
+                camera.position.y = MathUtils.clamp(camera.position.y, minY, maxY);
+            }
+        }
 
         camera.update();
 

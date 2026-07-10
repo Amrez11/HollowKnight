@@ -84,7 +84,7 @@ public class Game {
         player.update(delta);
         playerCollision.checkCollisions();
         if (player.isOnBoss()) {
-            player.getPosition().set(this.getEnemies().get(6).getPosition());
+            player.getPosition().set(new Vector2(9256,5500));
         }
 
         // 2. Enemies — ONE loop only; drain boss hitboxes in the same pass

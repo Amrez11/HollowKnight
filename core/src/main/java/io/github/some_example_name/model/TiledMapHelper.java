@@ -31,23 +31,48 @@ public class TiledMapHelper {
         }
         return solidBlocks;
     }
-    // Inside io.github.some_example_name.model.TiledMapHelper
 
     public Array<Rectangle> getDeadlyZones() {
         Array<Rectangle> deadlyZones = new Array<>();
 
-        // Ensure this string matches exactly with the layer name in your TMX file
         MapLayer layer = tiledMap.getLayers().get("deadly");
 
         if (layer != null) {
             for (MapObject object : layer.getObjects()) {
                 if (object instanceof RectangleMapObject) {
-                    // We don't need a custom SolidBlock class here, just the raw Rectangle
+
                     Rectangle rect = ((RectangleMapObject) object).getRectangle();
                     deadlyZones.add(new Rectangle(rect.x, rect.y, rect.width, rect.height));
                 }
             }
         }
         return deadlyZones;
+    }
+    public Array<Rectangle> getCameraBounds() {
+        Array<Rectangle> bounds = new Array<>();
+        // Assuming the layer is literally named "cameraBounds"
+        MapLayer layer = tiledMap.getLayers().get("cameraBounds");
+
+        if (layer != null) {
+            for (MapObject object : layer.getObjects()) {
+                if (object instanceof RectangleMapObject) {
+                    Rectangle rect = ((RectangleMapObject) object).getRectangle();
+                    bounds.add(new Rectangle(rect.x, rect.y, rect.width, rect.height));
+                }
+            }
+        }
+        return bounds;
+    }
+    public Rectangle getNamedRectangle(String layerName, String objectName) {
+        MapLayer layer = tiledMap.getLayers().get(layerName);
+        if (layer != null) {
+            MapObject object = layer.getObjects().get(objectName);
+            if (object instanceof RectangleMapObject) {
+                Rectangle rect = ((RectangleMapObject) object).getRectangle();
+                // Return a copy so we don't accidentally modify the map data
+                return new Rectangle(rect.x, rect.y, rect.width, rect.height);
+            }
+        }
+        return null;
     }
 }
