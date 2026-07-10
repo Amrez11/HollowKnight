@@ -15,6 +15,10 @@ public class Entity implements IDamageable {
     public static final float HITBOX_WIDTH    = HITBOX_RIGHT_X - HITBOX_LEFT_X;
     public static final float HITBOX_HEIGHT   = HITBOX_TOP_Y  - HITBOX_BOTTOM_Y;
 
+
+    private boolean godMode = false;
+    private boolean noclip = false;
+
     private boolean isOnBoss;
 
     private static final int MAX_HP   = 9;
@@ -111,6 +115,34 @@ public class Entity implements IDamageable {
         }
 
         System.out.println("entity"+hp);
+    }
+
+
+    public void toggleGodMode() {
+        this.godMode = !this.godMode;
+        System.out.println("God Mode: " + (this.godMode ? "ON" : "OFF"));
+    }
+
+    public boolean isGodMode() {
+        return godMode;
+    }
+
+    public void toggleNoclip() {
+        this.noclip = !this.noclip;
+        if (noclip) {
+            this.velocity.set(0, 0);
+        }
+        System.out.println("Noclip Mode: " + (this.noclip ? "ON" : "OFF"));
+    }
+
+    public boolean isNoclip() {
+        return noclip;
+    }
+
+    public void emergencyHeal() {
+        this.soul = MAX_SOUL;
+        this.hp = MAX_HP + 5; // Grants 5 extra masks, bypassing the usual clamping
+        System.out.println("Emergency Heal Activated!");
     }
 
     public float getHitboxLeft()   { return position.x + HITBOX_LEFT_X; }

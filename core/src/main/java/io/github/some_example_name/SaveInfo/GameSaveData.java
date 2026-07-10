@@ -34,7 +34,7 @@ public class GameSaveData {
     // ── Enemies ─────────────────────────────────────────────────────────────
     public ArrayList<EnemySaveData> enemies = new ArrayList<>();
 
-    /** No-arg constructor required by LibGDX's reflection-based Json. */
+
     public GameSaveData() {}
 
     public int getHoursPlayed() {

@@ -13,6 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import io.github.some_example_name.controller.SettingsMenuController;
+import io.github.some_example_name.model.costumActors.GuideModal;
+import io.github.some_example_name.model.costumActors.SettingsModal;
 
 
 public class MainMenuScreen extends AbstractScreen   {
@@ -74,7 +76,13 @@ public class MainMenuScreen extends AbstractScreen   {
         settingsBtn.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                UiManager.setScreen(new SettingMenuScreen(new SettingsMenuController()));
+                new SettingsModal(new SettingsMenuController()).show();
+            }
+        });
+        Guide.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                new GuideModal().show();
             }
         });
         achievements.addListener(new ClickListener(){
@@ -83,7 +91,6 @@ public class MainMenuScreen extends AbstractScreen   {
                 UiManager.setScreen(new AchievementsScreen());
             }
         });
-        stage.setDebugAll(true);
 
 
 

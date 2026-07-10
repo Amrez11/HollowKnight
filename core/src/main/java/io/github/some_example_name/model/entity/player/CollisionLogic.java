@@ -18,7 +18,12 @@ public class  CollisionLogic {
     }
 
     public void checkCollisions() {
-        // Reset for this frame
+        if (entity.isNoclip()) {
+            entity.setOnGround(false);
+            entity.setSliding(false);
+            return;
+        }
+
         entity.setOnGround(false);
         entity.setSliding(false);
 

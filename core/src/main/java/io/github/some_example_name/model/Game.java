@@ -84,7 +84,8 @@ public class Game {
         player.update(delta);
         playerCollision.checkCollisions();
         if (player.isOnBoss()) {
-            player.getPosition().set(new Vector2(9256,5500));
+            player.setOnBoss(false);
+            player.getPosition().set(new Vector2(9256,5000));
         }
 
         // 2. Enemies — ONE loop only; drain boss hitboxes in the same pass
@@ -292,5 +293,17 @@ public class Game {
             enemies.add(e);
             enemyCollisions.add(new EnemyCollisionLogic(e, solidBlocks, enemies));
         }
+
     }
+    public void instaKillAllEnemies() {
+
+        for (EnemyEntity enemy : enemies) {
+            if (!enemy.isDead()) {
+                enemy.takeDamage(9999); // Force kill
+            }
+        }
+        System.out.println("Insta-Kill Activated: All enemies wiped.");
+    }
+
+
 }

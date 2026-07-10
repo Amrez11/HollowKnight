@@ -3,6 +3,7 @@ package io.github.some_example_name;
 import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.Manager.UiManager;
 import io.github.some_example_name.Screens.MainMenuScreen;
+import io.github.some_example_name.controller.SettingsMenuController;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -12,7 +13,8 @@ public class Main extends Game  {
     public void create() {
         GameAssetManager.init();
         UiManager.init(this);
-       MainMenuScreen mainMenuScreen= new MainMenuScreen();
+        new SettingsMenuController();
+        MainMenuScreen mainMenuScreen= new MainMenuScreen();
         setScreen(mainMenuScreen);
     }
 

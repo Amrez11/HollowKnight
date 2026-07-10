@@ -39,10 +39,24 @@ public class PauseModel extends Modal{
                 onExit();
             }
         });
+        settingsBtn.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                onSettings();
+            }
+        });
+        guideBtn.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                onGuide();
+            }
+        });
 
     }
     public void onResume(){}
     public void onSave(){}
     public void onExit(){}
+    public void onSettings(){}
+    public void onGuide(){}
 
 }

@@ -152,16 +152,14 @@ public class PlayerMovement {
             }
         }
 
-        // ── Gravity (always applied while airborne) ───────────────────────────
-        //
-        // Gravity runs unconditionally in the air — there is no longer any
-        // "suppress gravity while holding jump" window.  Variable height comes
-        // purely from the jump-cut mechanic above.
-        //
+
         if (!entity.isOnGround()) {
-            entity.getVelocity().y -= GRAVITY * delta;
-            if (entity.getVelocity().y < 0f) {
-                entity.setCurrentAnimation(AnimationType.KNIGHT_Fall);
+            if (!entity.isNoclip()) {
+                entity.getVelocity().y -= GRAVITY * delta;
+                if (entity.getVelocity().y < 0f) {
+                    entity.setCurrentAnimation(AnimationType.KNIGHT_Fall);
+                }
+
             }
         } else {
             // Snap downward drift to zero while grounded

@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import io.github.some_example_name.Manager.GameAssetManager;
+import io.github.some_example_name.model.costumActors.BrightnessOverlay;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -48,6 +49,7 @@ public abstract  class AbstractScreen  implements Screen {
 
 
         mainStack.add(rootTable);
+        mainStack.add(new BrightnessOverlay());
         mainStack.add(modalStack);
         mainStack.add(toastStack);
 
@@ -86,7 +88,7 @@ public abstract  class AbstractScreen  implements Screen {
     public void dispose() {
 
     }
-     public Stack getModalStack(){
+    public Stack getModalStack(){
         return modalStack;
     }
 

@@ -153,9 +153,7 @@ public class DamageResolver {
     }
 
     private void hitPlayer(Entity player, int damage) {
-        // [FIXED] A 0-damage hit (e.g. Zote's harmless tantrum swing) should
-        // be a complete no-op for the player — no hurt flash, no i-frames.
-        // Only real damage should trigger the feedback/invincibility window.
+        if (player.isGodMode()) return;
         if (damage <= 0) return;
 
         player.setHp(Math.max(0, player.getHp() - damage));

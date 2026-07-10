@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -22,6 +23,7 @@ import io.github.some_example_name.Manager.AchievementManager;
 import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.SaveInfo.GameSaveData;
 import io.github.some_example_name.controller.GameProcessor;
+import io.github.some_example_name.controller.SettingsMenuController;
 import io.github.some_example_name.model.Game;
 import io.github.some_example_name.model.SolidBlock;
 import io.github.some_example_name.model.TiledMapHelper;
@@ -30,6 +32,8 @@ import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.npc.ZoteEntity;
 import io.github.some_example_name.model.enums.AnimationType;
+
+import java.util.HashMap;
 
 public class GameScreen extends AbstractScreen{
     private SpriteBatch batch;
@@ -44,6 +48,8 @@ public class GameScreen extends AbstractScreen{
     private OrthogonalTiledMapRenderer mapRenderer;
 
     private Array<Rectangle> cameraBounds;
+    private HashMap<Rectangle, Texture> roomBackgrounds; // Holds the custom backgrounds
+
     private TiledMapHelper mapHelper;
     private Rectangle bossRoom;
     private Rectangle bossDoor;
@@ -54,6 +60,7 @@ public class GameScreen extends AbstractScreen{
     Array<Rectangle> deadlyZones ;
     private OrthographicCamera hudCamera;
     private Hud hud;
+    private SettingsMenuController settingsMenuController;
 
 
     private final int[] background={0,1,2,3};
@@ -66,9 +73,9 @@ public class GameScreen extends AbstractScreen{
 
     /**
      * @param slotId   which save slot this playthrough is tied to; the pause
-     *                 menu's Save button writes here.
+     * menu's Save button writes here.
      * @param saveData if non-null, the run's state is restored from this save
-     *                 right after the room's default entities are spawned.
+     * right after the room's default entities are spawned.
      */
     public GameScreen(Game game, String slotId, GameSaveData saveData) {
         this.game = game;
@@ -86,6 +93,18 @@ public class GameScreen extends AbstractScreen{
         solidBlocks = mapHelper.getSolidBlock();
         cameraBounds = mapHelper.getCameraBounds();
         deadlyZones = mapHelper.getDeadlyZones();
+
+        roomBackgrounds = new HashMap<>();
+
+
+        if (cameraBounds.size >= 4) {
+            roomBackgrounds.put(cameraBounds.get(0), new Texture("ChatGPT Image Jul 10, 2026 at 06_18_14 AM.png"));
+            roomBackgrounds.put(cameraBounds.get(1), new Texture("backgrounds/room2_bg.png"));
+            roomBackgrounds.put(cameraBounds.get(2), new Texture("backgrounds/room3_bg.png"));
+            roomBackgrounds.put(cameraBounds.get(3), new Texture("backgrounds/boss_room_bg.png"));
+        }
+        // -----------------------------------
+
         game.init(solidBlocks,deadlyZones);
         game.loadRoom();
         hudCamera = new OrthographicCamera();
@@ -98,7 +117,8 @@ public class GameScreen extends AbstractScreen{
 
         viewport=new ScreenViewport(camera);
         shapeRenderer=new ShapeRenderer();
-        gameProcessor=new GameProcessor(game, slotId);
+        settingsMenuController = new SettingsMenuController();
+        gameProcessor=new GameProcessor(game, slotId, settingsMenuController);
         InputMultiplexer inputMultiplexer=new InputMultiplexer();
         inputMultiplexer.addProcessor(stage);
         inputMultiplexer.addProcessor(gameProcessor);
@@ -261,6 +281,16 @@ public class GameScreen extends AbstractScreen{
 
         batch.setProjectionMatrix(camera.combined);
         shapeRenderer.setProjectionMatrix(camera.combined);
+
+        // --- DRAW THE CUSTOM ROOM BACKGROUND AT THE VERY BACK ---
+        batch.begin();
+        if (currentBound != null && roomBackgrounds.containsKey(currentBound)) {
+            Texture bgTexture = roomBackgrounds.get(currentBound);
+            // This stretches the background perfectly inside the camera bounds rectangle
+            batch.draw(bgTexture, currentBound.x, currentBound.y, currentBound.width, currentBound.height);
+        }
+        batch.end();
+
         mapRenderer.setView(camera);
         mapRenderer.render(background);
 
@@ -338,14 +368,14 @@ public class GameScreen extends AbstractScreen{
         shapeRenderer.line(0,0,100,0);
         shapeRenderer.line(0,0,0,100);
 
-        // 2. Entity Hurtboxes (Cyan)
+
         shapeRenderer.setColor(Color.CYAN);
         shapeRenderer.rect(game.getPlayer().getPosition().x+20,game.getPlayer().getPosition().y,50,100);
         for (EnemyEntity e:game.getEnemies()){
             shapeRenderer.rect(e.getPosition().x+e.hitboxLeftX,e.getPosition().y+e.hitboxBottomY,e.hitboxRightX-e.hitboxLeftX,e.hitboxTopY-e.hitboxBottomY);
         }
 
-        // 3. Player Attack Hitboxes (Yellow)
+
         shapeRenderer.setColor(Color.YELLOW);
         for (AttackHitbox h : game.getPlayerHitboxes()) {
             shapeRenderer.rect(h.bounds.x, h.bounds.y, h.bounds.width, h.bounds.height);
@@ -354,7 +384,7 @@ public class GameScreen extends AbstractScreen{
             shapeRenderer.circle(cx, cy, Math.max(h.bounds.width, h.bounds.height) / 2f, 24);
         }
 
-        // 4. Enemy Attack Hitboxes (Red) - NEW! This lets you see the boss attacks
+
         shapeRenderer.setColor(Color.RED);
         for (AttackHitbox h : game.getEnemyHitboxes()) {
             shapeRenderer.rect(h.bounds.x, h.bounds.y, h.bounds.width, h.bounds.height);
@@ -390,5 +420,18 @@ public class GameScreen extends AbstractScreen{
         batch.end();
 
         super.render(delta);
+    }
+
+
+    @Override
+    public void dispose() {
+        if (roomBackgrounds != null) {
+            for (Texture bg : roomBackgrounds.values()) {
+                bg.dispose();
+            }
+        }
+        if (batch != null) batch.dispose();
+        if (shapeRenderer != null) shapeRenderer.dispose();
+        super.dispose();
     }
 }

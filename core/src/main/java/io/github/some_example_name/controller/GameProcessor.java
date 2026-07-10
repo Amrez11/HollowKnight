@@ -1,5 +1,6 @@
 package io.github.some_example_name.controller;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.Vector2;
@@ -8,7 +9,9 @@ import io.github.some_example_name.Manager.UiManager;
 import io.github.some_example_name.Screens.MainMenuScreen;
 import io.github.some_example_name.model.Game;
 import io.github.some_example_name.model.costumActors.CharmMenuModal;
+import io.github.some_example_name.model.costumActors.GuideModal;
 import io.github.some_example_name.model.costumActors.PauseModel;
+import io.github.some_example_name.model.costumActors.SettingsModal;
 
 /**
  * Key bindings
@@ -31,15 +34,42 @@ public class GameProcessor implements InputProcessor {
 
     private final Game game;
     private final String slotId;
+    private final SettingsMenuController settingsMenuController;
     private CharmMenuModal charmMenu;
 
-    public GameProcessor(Game game, String slotId) {
+    public GameProcessor(Game game, String slotId, SettingsMenuController settingsMenuController) {
         this.game = game;
         this.slotId = slotId;
+        this.settingsMenuController = settingsMenuController;
     }
 
     @Override
     public boolean keyDown(int keycode) {
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
+            switch (keycode) {
+                case Input.Keys.K -> {
+                    game.instaKillAllEnemies();
+                    return true;
+                }
+                case Input.Keys.N -> {
+                    game.getPlayer().toggleNoclip();
+                    return true;
+                }
+                case Input.Keys.T -> {
+
+                  game.getPlayer().setOnBoss(true);
+                    return true;
+                }
+                case Input.Keys.G -> {
+                    game.getPlayer().toggleGodMode();
+                    return true;
+                }
+                case Input.Keys.H -> {
+                    game.getPlayer().emergencyHeal();
+                    return true;
+                }
+            }
+        }
         switch (keycode) {
             case Input.Keys.F -> {
                 if (game.isNearZote() && !game.isZoteDialogueActive()) {
@@ -60,6 +90,12 @@ public class GameProcessor implements InputProcessor {
                     @Override public void onSave() {
                         SaveManager.save(game, slotId, slotId);
                         this.hide();
+                    }
+                    @Override public void onSettings() {
+                        new SettingsModal(settingsMenuController).show();
+                    }
+                    @Override public void onGuide() {
+                        new GuideModal().show();
                     }
                 };
                 pauseModel.show();
