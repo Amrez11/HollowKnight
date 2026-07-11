@@ -6,6 +6,7 @@ import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 public class BossBehavior implements IEnemyBehavior {
 
@@ -103,6 +104,8 @@ public class BossBehavior implements IEnemyBehavior {
     }
     @Override public int           getContactDamage() { return CONTACT_DAMAGE; }
     @Override public AnimationType idleAnimation()    { return AnimationType.BOSS_IDLE; }
+    @Override public AnimationType deadAnimation()    { return AnimationType.BOSS_DEAD; }
+    @Override public SoundType     deathSound()        { return SoundType.BOSS_DEATH; }
 
     public boolean isStunned()        { return state == State.STUN; }
     public boolean isPoundLanded()    { return poundLanded; }

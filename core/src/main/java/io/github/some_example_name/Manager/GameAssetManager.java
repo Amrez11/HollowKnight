@@ -1,8 +1,11 @@
 package io.github.some_example_name.Manager;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Cursor;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -13,8 +16,11 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
+import io.github.some_example_name.controller.SettingsMenuController;
 import io.github.some_example_name.model.enums.Achievement;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.MusicType;
+import io.github.some_example_name.model.enums.SoundType;
 
 import java.util.HashMap;
 
@@ -29,6 +35,16 @@ public class GameAssetManager {
     public static final HashMap<AnimationType, Animation<TextureRegion>> animationMap=new HashMap<>();
     public static final HashMap<Achievement, TextureRegionDrawable> achievementIcons = new HashMap<>();
 
+    // ── SFX / Music ─────────────────────────────────────────────────────────
+    // Same loading philosophy as the Zote growl clips below: none of these
+    // files exist in the repo yet, so loading is defensive (per-clip
+    // try/catch) — a missing sound is logged and silently skipped rather
+    // than crashing startup like a missing sprite sheet would.
+    public static final HashMap<SoundType, Sound> soundMap = new HashMap<>();
+    public static final HashMap<MusicType, Music> musicMap = new HashMap<>();
+    private static Music currentMusic;
+    private static MusicType currentMusicType;
+
     // ── Zote voice SFX ─────────────────────────────────────────────────────
     // NOTE: these files don't exist in the repo yet — add short growl/grumble
     // clips at these paths (assets/audio/zote/) before they'll actually play.
@@ -40,6 +56,16 @@ public class GameAssetManager {
         "audio/zote/ZoteGrowl3.ogg"
     };
     public static final Array<Sound> zoteGrowlSounds = new Array<>();
+
+    // ── Custom cursor ───────────────────────────────────────────────────────
+    // A small pointer-shaped PNG with a transparent background works best.
+    // HOTSPOT_X/Y is the pixel inside that image that corresponds to the
+    // actual click point (0,0 = top-left of the image) — tune it to wherever
+    // your cursor's "tip" is once you've got the real art in.
+    private static final String CURSOR_PATH = "ui/cursor-nail.png";
+    private static final int    CURSOR_HOTSPOT_X = 0;
+    private static final int    CURSOR_HOTSPOT_Y = 0;
+    private static Cursor customCursor;
 
     public static void init(){
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -78,6 +104,102 @@ public class GameAssetManager {
                 Gdx.app.error("GameAssetManager", "Missing Zote growl SFX: " + path, e);
             }
         }
+
+        for (SoundType s : SoundType.values()) {
+            loadSound(s);
+        }
+        for (MusicType m : MusicType.values()) {
+            loadMusic(m);
+        }
+
+        loadCursor();
+    }
+
+    /**
+     * Swaps the OS pointer for a custom in-game cursor. Defensive like the
+     * sound loading above — a missing/bad image logs an error and leaves the
+     * system cursor in place instead of crashing startup.
+     */
+    private static void loadCursor() {
+        try {
+            Pixmap pixmap = new Pixmap(Gdx.files.internal(CURSOR_PATH));
+            customCursor = Gdx.graphics.newCursor(pixmap, CURSOR_HOTSPOT_X, CURSOR_HOTSPOT_Y);
+            Gdx.graphics.setCursor(customCursor);
+            pixmap.dispose(); // newCursor() copies what it needs; the Pixmap itself isn't needed after this
+        } catch (Exception e) {
+            Gdx.app.error("GameAssetManager", "Missing custom cursor image: " + CURSOR_PATH, e);
+        }
+    }
+
+    private static void loadSound(SoundType type) {
+        try {
+            soundMap.put(type, Gdx.audio.newSound(Gdx.files.internal(type.path)));
+        } catch (Exception e) {
+            Gdx.app.error("GameAssetManager", "Missing SFX: " + type.path, e);
+        }
+    }
+
+    private static void loadMusic(MusicType type) {
+        try {
+            Music music = Gdx.audio.newMusic(Gdx.files.internal(type.path));
+            music.setLooping(true);
+            musicMap.put(type, music);
+        } catch (Exception e) {
+            Gdx.app.error("GameAssetManager", "Missing music track: " + type.path, e);
+        }
+    }
+
+    /**
+     * Plays a one-shot SFX at (clip's own volume) × (player's SFX slider).
+     * No-op if the clip failed to load — every combat/movement call site can
+     * fire these freely without null-checking soundMap itself.
+     */
+    public static void playSound(SoundType type) {
+        if (type == null) return;
+        Sound sound = soundMap.get(type);
+        if (sound == null) return;
+        sound.play(type.volume * masterSfxVolume());
+    }
+
+    /**
+     * Starts looping `type`, stopping whatever was playing before it. Calling
+     * this again with the track that's already playing is a no-op, so
+     * GameScreen can call it every frame a room is active without restarting
+     * the track each time.
+     */
+    public static void playMusic(MusicType type) {
+        if (type == currentMusicType && currentMusic != null && currentMusic.isPlaying()) return;
+        stopMusic();
+        Music music = musicMap.get(type);
+        if (music == null) return;
+        music.setVolume(type.volume * masterMusicVolume());
+        music.play();
+        currentMusic = music;
+        currentMusicType = type;
+    }
+
+    public static void stopMusic() {
+        if (currentMusic != null) {
+            currentMusic.stop();
+        }
+        currentMusic = null;
+        currentMusicType = null;
+    }
+
+    /** Called by SettingsMenuController whenever the music slider moves, so the currently-playing track updates immediately instead of waiting for the next playMusic() call. */
+    public static void updateMusicVolume() {
+        if (currentMusic == null || currentMusicType == null) return;
+        currentMusic.setVolume(currentMusicType.volume * masterMusicVolume());
+    }
+
+    private static float masterSfxVolume() {
+        SettingsMenuController s = SettingsMenuController.getInstance();
+        return s != null ? s.getSfxVolume() : 1f;
+    }
+
+    private static float masterMusicVolume() {
+        SettingsMenuController s = SettingsMenuController.getInstance();
+        return s != null ? s.getMusicVolume() : 1f;
     }
 
     /** Plays one of Zote's growl SFX at random. No-op if none loaded. */
@@ -143,6 +265,14 @@ public class GameAssetManager {
             case HOWLING_WRAITHS_BLAST:
             case HUD_MASK_BREAK:
                 return Animation.PlayMode.NORMAL; // play once, don't loop
+
+            // ── Death animations: play once and hold on the last frame ──
+            case CRAWLER_DEAD:
+            case FLYER_DEAD:
+            case SENTRY_DEAD:
+            case LASER_FLYER_DEAD:
+            case BOSS_DEAD:
+                return Animation.PlayMode.NORMAL;
 
             // ── ADDED: Boss Play Mode Rules ──
             case BOSS_MACE_WINDUP:

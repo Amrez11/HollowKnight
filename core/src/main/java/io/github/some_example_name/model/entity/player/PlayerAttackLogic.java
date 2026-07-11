@@ -1,7 +1,9 @@
 package io.github.some_example_name.model.entity.player;
 
 import io.github.some_example_name.Manager.CharmManager;
+import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 public class PlayerAttackLogic {
 
@@ -32,6 +34,7 @@ public class PlayerAttackLogic {
             isAttacking     = true;
             attackTimer     = ATTACK_DURATION * CharmManager.getNailSlashDurationMultiplier();
             entity.setAttacking(true);
+            GameAssetManager.playSound(SoundType.PLAYER_NAIL_SWING);
         }
         if (!entity.isAttackPressed()) {
             attackInitiated = false;

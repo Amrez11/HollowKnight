@@ -3,6 +3,7 @@ package io.github.some_example_name.model.entity.enemyEntity.enemyBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 /**
  * Normal ground enemy — patrols back and forth at constant speed and turns
@@ -20,6 +21,8 @@ public class CrawlerBehavior implements IEnemyBehavior {
     @Override public void   setEntity(EnemyEntity entity) { this.self = entity; }
     @Override public int    getContactDamage()             { return CONTACT_DAMAGE; }
     @Override public AnimationType idleAnimation()         { return AnimationType.CRAWLER_IDLE; }
+    @Override public AnimationType deadAnimation()          { return AnimationType.CRAWLER_DEAD; }
+    @Override public SoundType     deathSound()              { return SoundType.CRAWLER_DEATH; }
 
     @Override
     public void update(float delta, Entity player) {

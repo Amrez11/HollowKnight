@@ -7,6 +7,7 @@ import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.entity.player.PlayerAttackLogic;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 public class DamageResolver {
 
@@ -55,6 +56,7 @@ public class DamageResolver {
                         int soulGain = Math.round(
                             PlayerAttackLogic.SOUL_PER_HIT * CharmManager.getSoulMultiplier());
                         player.addSoul(soulGain);
+                        io.github.some_example_name.Manager.GameAssetManager.playSound(SoundType.PLAYER_SOUL_GAIN);
                     }
                 }
             }
@@ -161,6 +163,7 @@ public class DamageResolver {
         player.setFlashDuration(0.1f);
         player.setInvincible(true);
         playerIFrameTimer = PLAYER_I_FRAME_DURATION;
+        io.github.some_example_name.Manager.GameAssetManager.playSound(SoundType.PLAYER_HURT);
     }
 
     private void tickAndPruneHitboxes(float delta, Array<AttackHitbox> hitboxes) {

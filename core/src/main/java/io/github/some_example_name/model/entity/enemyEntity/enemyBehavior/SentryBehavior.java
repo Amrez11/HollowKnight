@@ -3,6 +3,7 @@ package io.github.some_example_name.model.entity.enemyEntity.enemyBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 /**
  * Special ground enemy. Normally alternates PATROL / RESTING on a timer.
@@ -34,6 +35,14 @@ public class SentryBehavior implements IEnemyBehavior {
     @Override public void   setEntity(EnemyEntity entity) { this.self = entity; }
     @Override public int    getContactDamage()             { return CONTACT_DAMAGE; }
     @Override public AnimationType idleAnimation()         { return AnimationType.SENTRY_PATROL; }
+    @Override public AnimationType deadAnimation()          { return AnimationType.SENTRY_DEAD; }
+    @Override public SoundType     deathSound()              { return SoundType.SENTRY_DEATH; }
+
+    @Override
+    public void reset() {
+        state      = State.PATROL;
+        stateTimer = 0f;
+    }
 
     @Override
     public void update(float delta, Entity player) {

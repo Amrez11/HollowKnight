@@ -32,6 +32,7 @@ import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.npc.ZoteEntity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.MusicType;
 
 import java.util.HashMap;
 
@@ -49,6 +50,10 @@ public class GameScreen extends AbstractScreen{
 
     private Array<Rectangle> cameraBounds;
     private HashMap<Rectangle, Texture> roomBackgrounds; // Holds the custom backgrounds
+    private HashMap<Rectangle, MusicType> roomMusic;      // Which track loops while the player is in each room
+    // The camera-bound room the player was inside last frame. Used to detect
+    // the moment they leave a room, so its dead enemies can be respawned.
+    private Rectangle previousBound;
 
     private TiledMapHelper mapHelper;
     private Rectangle bossRoom;
@@ -99,9 +104,15 @@ public class GameScreen extends AbstractScreen{
 
         if (cameraBounds.size >= 4) {
             roomBackgrounds.put(cameraBounds.get(0), new Texture("ChatGPT Image Jul 10, 2026 at 06_18_14 AM.png"));
-            roomBackgrounds.put(cameraBounds.get(1), new Texture("backgrounds/room2_bg.png"));
-            roomBackgrounds.put(cameraBounds.get(2), new Texture("backgrounds/room3_bg.png"));
-            roomBackgrounds.put(cameraBounds.get(3), new Texture("backgrounds/boss_room_bg.png"));
+            roomBackgrounds.put(cameraBounds.get(1), new Texture("cd_room_BG_02.png"));
+            roomBackgrounds.put(cameraBounds.get(2), new Texture("ChatGPT Image Jul 10, 2026 at 06_18_14 AM.png"));
+            roomBackgrounds.put(cameraBounds.get(3), new Texture("ChatGPT Image Jul 10, 2026 at 06_18_14 AM.png"));
+
+            roomMusic = new HashMap<>();
+            roomMusic.put(cameraBounds.get(0), MusicType.ROOM_1);
+            roomMusic.put(cameraBounds.get(1), MusicType.ROOM_2);
+            roomMusic.put(cameraBounds.get(2), MusicType.ROOM_3);
+            roomMusic.put(cameraBounds.get(3), MusicType.BOSS_ROOM_AMBIENT);
         }
         // -----------------------------------
 
@@ -128,6 +139,7 @@ public class GameScreen extends AbstractScreen{
         float spawnX=spawnPoint.getProperties().get("x", Float.class);
         float spawnY=spawnPoint.getProperties().get("y", Float.class);
         game.getPlayer().setPosition(new Vector2(spawnX,spawnY));
+        game.setPlayerSpawnPoint(new Vector2(spawnX, spawnY));
 
 
         spawnPoint=spawnLayer.getObjects().get("zoteSpawn");
@@ -229,6 +241,9 @@ public class GameScreen extends AbstractScreen{
                     // 2. Spawn the boss NOW
                     game.spawnEnemy(EnemyEntity.boss(bossSpawnPos));
                     System.out.println("Boss spawned!");
+
+                    // 3. Swap the ambient boss-room track for the fight theme
+                    GameAssetManager.playMusic(MusicType.BOSS_THEME);
                 }
             }
 
@@ -249,6 +264,21 @@ public class GameScreen extends AbstractScreen{
                 break;
             }
         }
+
+        // The player just stepped out of `previousBound` (into a different
+        // room, or into no room at all) — respawn any of its dead enemies so
+        // the room is repopulated the next time the player walks back in.
+        if (previousBound != null && previousBound != currentBound) {
+            game.respawnDeadEnemiesInRoom(previousBound);
+        }
+        // Switch background music whenever the player enters a new room —
+        // covers both mid-game room changes and the very first frame
+        // (previousBound == null, currentBound == the starting room).
+        if (currentBound != previousBound && currentBound != null && !bossFightStarted && roomMusic != null) {
+            MusicType track = roomMusic.get(currentBound);
+            if (track != null) GameAssetManager.playMusic(track);
+        }
+        previousBound = currentBound;
 
         // 3. Clamp the camera if a bound was found
         if (currentBound != null) {
@@ -425,6 +455,7 @@ public class GameScreen extends AbstractScreen{
 
     @Override
     public void dispose() {
+        GameAssetManager.stopMusic();
         if (roomBackgrounds != null) {
             for (Texture bg : roomBackgrounds.values()) {
                 bg.dispose();

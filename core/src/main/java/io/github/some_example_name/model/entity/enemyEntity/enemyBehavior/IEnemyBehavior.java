@@ -4,6 +4,7 @@ package io.github.some_example_name.model.entity.enemyEntity.enemyBehavior;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 /**
  * Strategy interface for enemy AI.
@@ -40,4 +41,32 @@ public interface IEnemyBehavior {
      * EnemyEntity calls this once in its constructor to set the initial animation.
      */
     AnimationType idleAnimation();
+
+    /**
+     * The animation to display once the enemy has died. Defaults to the idle
+     * animation so behaviors that don't override this still compile/run —
+     * override per-enemy-type with a dedicated death sprite.
+     */
+    default AnimationType deadAnimation() {
+        return idleAnimation();
+    }
+
+    /** Sound played whenever this enemy takes damage and survives the hit. */
+    default SoundType hitSound() {
+        return SoundType.ENEMY_HIT;
+    }
+
+    /** Sound played the instant this enemy's hp hits 0 — pair it with deadAnimation(). */
+    default SoundType deathSound() {
+        return SoundType.ENEMY_HIT;
+    }
+
+    /**
+     * Clears any internal state-machine progress (state enum, timers, etc.)
+     * back to its starting point. Called by EnemyEntity.respawn() so a
+     * revived enemy doesn't resume mid-attack or mid-cooldown.
+     */
+    default void reset() {
+        // no-op by default
+    }
 }

@@ -53,6 +53,7 @@ public class SettingsMenuController {
         prefs.putFloat("musicVolume", volume);
         prefs.putBoolean("musicMuted", musicMuted);
         prefs.flush();
+        io.github.some_example_name.Manager.GameAssetManager.updateMusicVolume();
     }
 
     public float getMusicVolume() {
@@ -65,6 +66,7 @@ public class SettingsMenuController {
         prefs.putFloat("musicVolume", 0.5f);
         prefs.putBoolean("musicMuted", false);
         prefs.flush();
+        io.github.some_example_name.Manager.GameAssetManager.updateMusicVolume();
     }
 
     public void toggleMusicMute() {
@@ -82,6 +84,7 @@ public class SettingsMenuController {
         prefs.putFloat("musicVolume", musicVolume);
         prefs.putFloat("preMuteMusicVolume", preMuteMusicVolume);
         prefs.flush();
+        io.github.some_example_name.Manager.GameAssetManager.updateMusicVolume();
     }
 
     public boolean isMusicMuted() {

@@ -6,6 +6,7 @@ import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 /**
  * Normal flying enemy. Stays fixed at its spawn point forever — it never
@@ -38,6 +39,15 @@ public class CrystalFlyerBehavior implements IEnemyBehavior {
     @Override public void   setEntity(EnemyEntity entity) { this.self = entity; }
     @Override public int    getContactDamage()             { return CONTACT_DAMAGE; }
     @Override public AnimationType idleAnimation()         { return AnimationType.FLYER_IDLE; }
+    @Override public AnimationType deadAnimation()          { return AnimationType.FLYER_DEAD; }
+    @Override public SoundType     deathSound()              { return SoundType.FLYER_DEATH; }
+
+    @Override
+    public void reset() {
+        state      = State.IDLE;
+        stateTimer = 0f;
+        pendingHitboxes.clear();
+    }
 
     public Array<AttackHitbox> drainPendingHitboxes() {
         tempDrain.clear();

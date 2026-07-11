@@ -25,9 +25,11 @@ public enum AnimationType {
     CRAWLER_IDLE(1,"Untitled 4.png"),
     CRAWLER_WALK(1,"Untitled 4.png"),
     CRAWLER_LUNGE(1,"Untitled 4.png"),
+    CRAWLER_DEAD(3,"animation/Crystal_Crawler/Death Air.png"),
     FLYER_IDLE(4,"animation/Crystal_Hunter/Fly.png"),
     FLYER_HOVER(4,"animation/Crystal_Hunter/Fly.png"),
     FLYER_SWOOP(4,"animation/Crystal_Hunter/Fly.png"),
+    FLYER_DEAD(3,"animation/Crystal_Hunter/Death Air.png"),
 
     BOSS_IDLE(5,"animation/False_knight/Idle.png"),
     BOSS_MACE_WINDUP(3,"animation/False_knight/Attack.png"),
@@ -41,9 +43,11 @@ public enum AnimationType {
     BOSS_POWER_FALL(8,"animation/False_knight/Jump Attack.png"),
     BOSS_POWER_IMPACT(8,"animation/False_knight/Jump Attack.png"),
     BOSS_STUN(5,"animation/False_knight/Body.png"),
+    BOSS_DEAD(3,"animation/False_knight/DeathFall.png"),
     SENTRY_PATROL(7, "animation/Husk_Hornhead/Walk.png"),
     SENTRY_REST(6,   "animation/Husk_Hornhead/Idle.png"),
     SENTRY_MARCH(12,  "animation/Husk_Hornhead/Attack Lunge.png"),
+    SENTRY_DEAD(1,   "animation/Husk_Hornhead/Death Air.png"),
     CRYSTAL_PROJECTILE(4, "animation/Effects/LaserCircle.png"),
     LASER_BEAM(10,         "animation/Effects/CrystalLaser.png"),
 
@@ -52,6 +56,7 @@ public enum AnimationType {
     LASER_FLYER_CHARGE(6, "animation/Crystallized/Run.png"),
     LASER_FLYER_FIRE(7,   "animation/Crystallized/Shoot.png"),
     LASER_FLYER_ENRAGE(6, "animation/Crystallized/Run.png"),
+    LASER_FLYER_DEAD(3,   "animation/Crystallized/Death Air.png"),
 
 
     // ── HUD ──────────────────────────────────────────────────────────────────

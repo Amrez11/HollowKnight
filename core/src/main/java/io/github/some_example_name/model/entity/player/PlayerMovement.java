@@ -2,8 +2,10 @@ package io.github.some_example_name.model.entity.player;
 
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Manager.CharmManager;
+import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.enums.AnimationType;
 import io.github.some_example_name.model.enums.Charm;
+import io.github.some_example_name.model.enums.SoundType;
 
 public class PlayerMovement {
 
@@ -29,6 +31,7 @@ public class PlayerMovement {
 
 
     private boolean jumpInitiated = false;
+    private boolean wasOnGround   = true;
 
 
     private boolean wallJumpUsed = false;
@@ -48,6 +51,7 @@ public class PlayerMovement {
         if (entity.isDashPressed() && dashCooldownTimer <= 0f) {
             entity.setDash(true);
             entity.setDashPressed(false);
+            GameAssetManager.playSound(SoundType.PLAYER_DASH);
 
         }
 
@@ -109,10 +113,12 @@ public class PlayerMovement {
                 // ── First jump ────────────────────────────────────────────────
                 entity.setCurrentAnimation(AnimationType.KNIGHT_Jump);
                 entity.setNumOfJumps(1);          // one jump remaining
+                GameAssetManager.playSound(SoundType.PLAYER_JUMP);
             } else {
                 // ── Double jump (numOfJumps == 1) ─────────────────────────────
                 entity.setCurrentAnimation(AnimationType.KNIGHT_DJump);
                 entity.setNumOfJumps(0);          // both jumps consumed
+                GameAssetManager.playSound(SoundType.PLAYER_DOUBLE_JUMP);
             }
         }
 
@@ -168,7 +174,11 @@ public class PlayerMovement {
             }
             // Landing resets the wall-jump allowance for the next wall contact
             wallJumpUsed = false;
+            if (!wasOnGround) {
+                GameAssetManager.playSound(SoundType.PLAYER_LAND);
+            }
         }
+        wasOnGround = entity.isOnGround();
 
         doTheChanges(entity.getVelocity(), delta);
     }

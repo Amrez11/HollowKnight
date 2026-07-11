@@ -47,6 +47,10 @@ public class Game {
     private boolean wasAttacking = false;
     private boolean paused = false;
 
+    // Where the player respawns after hitting 0 hp — set once by GameScreen
+    // right after it reads the "playerSpawnPoint" object out of the Tiled map.
+    private Vector2 playerSpawnPoint;
+
     // ── Visual-only draw offsets ──────────────────────────────────────────────
     private static final float NAIL_DRAW_OFFSET_X_RIGHT     = -180f;
     private static final float NAIL_DRAW_OFFSET_X_LEFT      = -140f;
@@ -104,7 +108,22 @@ public class Game {
                 }
 
             }
-            if (e.isDead()) continue;
+            if (e.isDead()) {
+                // A corpse that hasn't settled onto the ground yet still needs
+                // gravity + block collision so it drops and lands instead of
+                // just freezing wherever it happened to die (important for
+                // flyers, which can die mid-air). Normal AI/behavior update
+                // and hitbox handling stay skipped either way.
+                if (!e.hasLanded()) {
+                    e.applyDeathGravity(delta);
+                    enemyCollisions.get(i).checkCollisions();
+                    if (e.isOnGround()) {
+                        e.setLanded(true);
+                        e.getVelocity().set(0f, 0f);
+                    }
+                }
+                continue;
+            }
 
             e.update(delta, player);
             enemyCollisions.get(i).checkCollisions();
@@ -132,6 +151,30 @@ public class Game {
 
         // 4. Damage resolution — both hitbox lists
         damageResolver.resolve(delta, player, enemies, playerHitboxes, enemyHitboxes,deadlyZones);
+
+        // 5. Player death — send them back to the room's spawn point instead
+        // of letting them sit at 0 hp.
+        if (player.getHp() <= 0) {
+            respawnPlayer();
+        }
+    }
+
+    /** Resets the player to playerSpawnPoint with full hp and clean combat state. */
+    private void respawnPlayer() {
+        io.github.some_example_name.Manager.GameAssetManager.playSound(
+            io.github.some_example_name.model.enums.SoundType.PLAYER_DEATH);
+        if (playerSpawnPoint != null) {
+            player.getPosition().set(playerSpawnPoint);
+        }
+        player.setHp(player.getMaxHp());
+        player.setSoul(0);
+        player.resetTransientCombatState();
+        AchievementManager.onPlayerDied();
+    }
+
+    /** Called once by GameScreen right after it reads playerSpawnPoint from the map. */
+    public void setPlayerSpawnPoint(Vector2 spawnPoint) {
+        this.playerSpawnPoint = new Vector2(spawnPoint);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -295,6 +338,26 @@ public class Game {
         }
 
     }
+    /**
+     * Revives every dead enemy whose spawn point lies inside the given
+     * camera-bound rectangle. Called by GameScreen the moment it detects the
+     * player has left that room, so the room feels freshly populated again
+     * the next time the player walks back in. Bosses are excluded — the
+     * boss fight is a one-time encounter (the door locks and beating it
+     * ends the game), so it never comes back.
+     */
+    public void respawnDeadEnemiesInRoom(Rectangle room) {
+        if (room == null) return;
+        for (EnemyEntity e : enemies) {
+            if (!e.isDead()) continue;
+            if (e.getBehavior() instanceof BossBehavior) continue;
+            Vector2 spawn = e.getSpawnPosition();
+            if (room.contains(spawn.x, spawn.y)) {
+                e.respawn();
+            }
+        }
+    }
+
     public void instaKillAllEnemies() {
 
         for (EnemyEntity enemy : enemies) {

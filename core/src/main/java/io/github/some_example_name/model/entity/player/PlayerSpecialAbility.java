@@ -1,7 +1,9 @@
 package io.github.some_example_name.model.entity.player;
 
 import io.github.some_example_name.Manager.CharmManager;
+import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 public class PlayerSpecialAbility {
 
@@ -81,6 +83,7 @@ public class PlayerSpecialAbility {
                 entity.setHp(Math.min(
                     entity.getHp() + FOCUS_HEALTH_GAIN,
                     entity.getMaxHp()));
+                GameAssetManager.playSound(SoundType.PLAYER_FOCUS_HEAL);
                 cancelFocus();
             }
 
@@ -110,6 +113,7 @@ public class PlayerSpecialAbility {
             entity.setCastLocked(true);
             castLockTimer = CAST_LOCK_DURATION;
             entity.setCurrentAnimation(AnimationType.KNIGHT_HowlingWraiths);
+            GameAssetManager.playSound(SoundType.PLAYER_HOWLING_WRAITHS);
 
             howlingHitsRemaining = 3;
             howlingHitTimer      = 0f;
@@ -140,6 +144,7 @@ public class PlayerSpecialAbility {
             vengefulCastTimer = VENGEFUL_CAST_DURATION;
             vengefulFiring   = true;
             entity.setCurrentAnimation(AnimationType.KNIGHT_VengefulSpirit);
+            GameAssetManager.playSound(SoundType.PLAYER_VENGEFUL_SPIRIT);
         }
 
         if (vengefulFiring) {
