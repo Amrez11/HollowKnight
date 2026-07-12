@@ -269,15 +269,10 @@ public class GameScreen extends AbstractScreen{
             game.update(delta);
             hud.update(delta, game.getPlayer());
 
-            // ── Camera shake triggers ────────────────────────────────────────
-            // isDamaged() is a single-frame pulse: DamageResolver resets it to
-            // false at the top of every resolve() call, then sets it true only
-            // on the frame a hit actually lands, so this fires exactly once per hit.
             if (game.getPlayer().isDamaged()) {
                 triggerShake(0.6f, 30f);
             }
-            // poundLanded is set by BossBehavior on mace-slam/leap/power-slam
-            // ground impacts but was never actually consumed anywhere before.
+
             for (EnemyEntity e : game.getEnemies()) {
                 if (e.getBehavior() instanceof BossBehavior) {
                     BossBehavior boss = (BossBehavior) e.getBehavior();
@@ -291,7 +286,6 @@ public class GameScreen extends AbstractScreen{
         target.set(game.getPlayer().getPosition().x, game.getPlayer().getPosition().y + 120, 0);
         camera.position.lerp(target, 0.1f);
 
-        // 2. Find which camera bound the player is currently inside
         Rectangle currentBound = null;
         float playerX = game.getPlayer().getPosition().x;
         float playerY = game.getPlayer().getPosition().y;
@@ -303,33 +297,28 @@ public class GameScreen extends AbstractScreen{
             }
         }
 
-        // The player just stepped out of `previousBound` (into a different
-        // room, or into no room at all) — respawn any of its dead enemies so
-        // the room is repopulated the next time the player walks back in.
+
         if (previousBound != null && previousBound != currentBound) {
             game.respawnDeadEnemiesInRoom(previousBound);
         }
-        // Switch background music whenever the player enters a new room —
-        // covers both mid-game room changes and the very first frame
-        // (previousBound == null, currentBound == the starting room).
+
         if (currentBound != previousBound && currentBound != null && !bossFightStarted && roomMusic != null) {
             MusicType track = roomMusic.get(currentBound);
             if (track != null) GameAssetManager.playMusic(track);
         }
         previousBound = currentBound;
 
-        // 3. Clamp the camera if a bound was found
         if (currentBound != null) {
-            // Calculate half of the camera's visible width and height, accounting for zoom
+
             float camHalfWidth = (camera.viewportWidth * camera.zoom) / 2f;
             float camHalfHeight = (camera.viewportHeight * camera.zoom) / 2f;
 
-            // X-Axis Clamping
+
             if (currentBound.width < camHalfWidth * 2) {
-                // If the room is smaller than the camera view, lock the camera to the room's center
+
                 camera.position.x = currentBound.x + currentBound.width / 2f;
             } else {
-                // Otherwise, clamp the camera so the edges don't leave the rectangle
+
                 float minX = currentBound.x + camHalfWidth;
                 float maxX = currentBound.x + currentBound.width - camHalfWidth;
                 camera.position.x = MathUtils.clamp(camera.position.x, minX, maxX);
