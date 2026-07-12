@@ -14,6 +14,7 @@ public class Main extends Game  {
         GameAssetManager.init();
         UiManager.init(this);
         new SettingsMenuController();
+        io.github.some_example_name.Manager.AchievementManager.loadPersisted();
         MainMenuScreen mainMenuScreen= new MainMenuScreen();
         setScreen(mainMenuScreen);
     }

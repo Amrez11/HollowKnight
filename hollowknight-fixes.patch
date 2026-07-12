@@ -1,0 +1,531 @@
+diff --git a/core/src/main/java/io/github/some_example_name/Main.java b/core/src/main/java/io/github/some_example_name/Main.java
+index 1d32a10..ea91f4a 100644
+--- a/core/src/main/java/io/github/some_example_name/Main.java
++++ b/core/src/main/java/io/github/some_example_name/Main.java
+@@ -14,6 +14,7 @@ public class Main extends Game  {
+         GameAssetManager.init();
+         UiManager.init(this);
+         new SettingsMenuController();
++        io.github.some_example_name.Manager.AchievementManager.loadPersisted();
+         MainMenuScreen mainMenuScreen= new MainMenuScreen();
+         setScreen(mainMenuScreen);
+     }
+diff --git a/core/src/main/java/io/github/some_example_name/Manager/AchievementManager.java b/core/src/main/java/io/github/some_example_name/Manager/AchievementManager.java
+index 17afdb3..1d1b666 100644
+--- a/core/src/main/java/io/github/some_example_name/Manager/AchievementManager.java
++++ b/core/src/main/java/io/github/some_example_name/Manager/AchievementManager.java
+@@ -1,5 +1,7 @@
+ package io.github.some_example_name.Manager;
+ 
++import com.badlogic.gdx.Gdx;
++import com.badlogic.gdx.Preferences;
+ import com.badlogic.gdx.math.Interpolation;
+ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+ import com.badlogic.gdx.scenes.scene2d.ui.Label;
+@@ -14,6 +16,30 @@ public class AchievementManager {
+     private static final Set<Achievement> unlockedAchievements = new HashSet<>();
+     private static final Set<String> enemiesDefeated = new HashSet<>();
+ 
++    // [FIXED] Unlocks used to live only in this static in-memory set (and,
++    // separately, inside whatever per-slot save file you manually wrote via
++    // the pause menu). That meant opening "Achievements" from the main menu —
++    // without having loaded a save this session — always showed everything
++    // locked, which looked exactly like "achievements don't get saved". This
++    // makes unlocks persist immediately, account-wide, independent of save
++    // slots, the moment they happen.
++    private static final String PREFS_NAME = "hollow-knight-achievements";
++    private static Preferences prefs;
++
++    private static Preferences prefs() {
++        if (prefs == null) prefs = Gdx.app.getPreferences(PREFS_NAME);
++        return prefs;
++    }
++
++    /** Call once at startup (after Gdx.app exists) to restore prior unlocks. */
++    public static void loadPersisted() {
++        for (Achievement a : Achievement.values()) {
++            if (prefs().getBoolean(a.name(), false)) {
++                unlockedAchievements.add(a);
++            }
++        }
++    }
++
+     private static float gameTimer = 0f;
+     private static final float SPEEDRUN_LIMIT = 300f; // 5 minutes in seconds
+     private static final int TOTAL_ENEMY_TYPES = 5;
+@@ -63,6 +89,8 @@ public class AchievementManager {
+     private static void unlock(Achievement achievement) {
+         if (!unlockedAchievements.contains(achievement)) {
+             unlockedAchievements.add(achievement);
++            prefs().putBoolean(achievement.name(), true);
++            prefs().flush();
+             showNotification(achievement);
+         }
+     }
+@@ -110,8 +138,16 @@ public class AchievementManager {
+      */
+     public static void restoreState(Set<Achievement> unlocked, Set<String> enemyTypesDefeated,
+                                     int killedCount, int deathCount, float timer) {
+-        unlockedAchievements.clear();
++        // [FIXED] Union with (rather than replace by) whatever's already unlocked
++        // globally, so loading an older/different save can never make an
++        // already-earned achievement look locked again.
+         unlockedAchievements.addAll(unlocked);
++        for (Achievement a : unlocked) {
++            if (!prefs().getBoolean(a.name(), false)) {
++                prefs().putBoolean(a.name(), true);
++            }
++        }
++        prefs().flush();
+         enemiesDefeated.clear();
+         enemiesDefeated.addAll(enemyTypesDefeated);
+         enemiesKilledCount = killedCount;
+diff --git a/core/src/main/java/io/github/some_example_name/Manager/GameAssetManager.java b/core/src/main/java/io/github/some_example_name/Manager/GameAssetManager.java
+index f60d1c9..9a7e450 100644
+--- a/core/src/main/java/io/github/some_example_name/Manager/GameAssetManager.java
++++ b/core/src/main/java/io/github/some_example_name/Manager/GameAssetManager.java
+@@ -58,14 +58,16 @@ public class GameAssetManager {
+     public static final Array<Sound> zoteGrowlSounds = new Array<>();
+ 
+     // ── Custom cursor ───────────────────────────────────────────────────────
+-    // A small pointer-shaped PNG with a transparent background works best.
+-    // HOTSPOT_X/Y is the pixel inside that image that corresponds to the
+-    // actual click point (0,0 = top-left of the image) — tune it to wherever
+-    // your cursor's "tip" is once you've got the real art in.
++    // [FIXED] Relying on Gdx.graphics.newCursor()/setCursor() to swap the OS
++    // hardware pointer turned out unreliable across drivers/OSes (silently
++    // ignored with no error, regardless of image size). Now we hide the native
++    // pointer with a 1x1 transparent cursor — about as minimal as an image can
++    // get, so it reliably applies everywhere — and AbstractScreen draws
++    // cursorTexture as a normal sprite at the mouse position every frame
++    // instead. That always works since it's just a texture draw, no OS/driver
++    // cursor support required.
+     private static final String CURSOR_PATH = "ui/cursor-nail.png";
+-    private static final int    CURSOR_HOTSPOT_X = 0;
+-    private static final int    CURSOR_HOTSPOT_Y = 0;
+-    private static Cursor customCursor;
++    public static Texture cursorTexture;
+ 
+     public static void init(){
+         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+@@ -116,16 +118,22 @@ public class GameAssetManager {
+     }
+ 
+     /**
+-     * Swaps the OS pointer for a custom in-game cursor. Defensive like the
+-     * sound loading above — a missing/bad image logs an error and leaves the
+-     * system cursor in place instead of crashing startup.
++     * Hides the native OS pointer and loads the nail-cursor art as a plain
++     * texture so AbstractScreen can draw it as a sprite every frame — see the
++     * block comment above CURSOR_PATH for why we stopped using a hardware
++     * cursor. Defensive like the sound loading above: a missing/bad image
++     * logs an error and leaves the system cursor visible instead of crashing.
+      */
+     private static void loadCursor() {
+         try {
+-            Pixmap pixmap = new Pixmap(Gdx.files.internal(CURSOR_PATH));
+-            customCursor = Gdx.graphics.newCursor(pixmap, CURSOR_HOTSPOT_X, CURSOR_HOTSPOT_Y);
+-            Gdx.graphics.setCursor(customCursor);
+-            pixmap.dispose(); // newCursor() copies what it needs; the Pixmap itself isn't needed after this
++            cursorTexture = new Texture(Gdx.files.internal(CURSOR_PATH));
++
++            Pixmap invisible = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
++            invisible.setColor(0, 0, 0, 0);
++            invisible.fill();
++            Cursor hiddenCursor = Gdx.graphics.newCursor(invisible, 0, 0);
++            Gdx.graphics.setCursor(hiddenCursor);
++            invisible.dispose();
+         } catch (Exception e) {
+             Gdx.app.error("GameAssetManager", "Missing custom cursor image: " + CURSOR_PATH, e);
+         }
+diff --git a/core/src/main/java/io/github/some_example_name/Screens/AbstractScreen.java b/core/src/main/java/io/github/some_example_name/Screens/AbstractScreen.java
+index e10653e..c34d44e 100644
+--- a/core/src/main/java/io/github/some_example_name/Screens/AbstractScreen.java
++++ b/core/src/main/java/io/github/some_example_name/Screens/AbstractScreen.java
+@@ -1,6 +1,7 @@
+ package io.github.some_example_name.Screens;
+ 
+ import com.badlogic.gdx.graphics.GL20;
++import com.badlogic.gdx.graphics.OrthographicCamera;
+ import com.badlogic.gdx.graphics.Texture;
+ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+ import com.badlogic.gdx.scenes.scene2d.ui.*;
+@@ -26,7 +27,37 @@ public abstract  class AbstractScreen  implements Screen {
+     protected Label.LabelStyle labelStyle;
+     protected TextButton.TextButtonStyle textButtonStyle;
+ 
+-
++    // ── Custom cursor (drawn, not OS hardware cursor) ───────────────────────
++    // [FIXED] Gdx.graphics.newCursor()/setCursor() swapping the OS pointer
++    // turned out unreliable — several GPU drivers/OSes cap or just ignore
++    // custom hardware cursors with no error at all, which is why the earlier
++    // fix (shrinking the image) still didn't show anything for some setups.
++    // Drawing our own sprite at the mouse position instead always works,
++    // since it's just a normal texture draw — no OS/driver cursor support
++    // needed. Lives here, not in GameScreen, so every screen gets it for free.
++    private static SpriteBatch cursorBatch;
++    private static OrthographicCamera cursorCamera;
++
++    private void drawCustomCursor() {
++        Texture tex = GameAssetManager.cursorTexture;
++        if (tex == null) return;
++
++        if (cursorBatch == null) {
++            cursorBatch  = new SpriteBatch();
++            cursorCamera = new OrthographicCamera();
++        }
++        cursorCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
++        cursorCamera.update();
++
++        float size = 32f; // on-screen cursor size in pixels, independent of the source art's resolution
++        float x = Gdx.input.getX();
++        float y = Gdx.graphics.getHeight() - Gdx.input.getY(); // input Y is top-down, draw Y is bottom-up
++
++        cursorBatch.setProjectionMatrix(cursorCamera.combined);
++        cursorBatch.begin();
++        cursorBatch.draw(tex, x, y - size, size, size);
++        cursorBatch.end();
++    }
+ 
+     @Override
+     public void show() {
+@@ -62,6 +93,7 @@ public abstract  class AbstractScreen  implements Screen {
+ 
+         stage.act(delta);
+         stage.draw();
++        drawCustomCursor();
+     }
+ 
+     @Override
+diff --git a/core/src/main/java/io/github/some_example_name/Screens/GameScreen.java b/core/src/main/java/io/github/some_example_name/Screens/GameScreen.java
+index 2d98f3b..47df86e 100644
+--- a/core/src/main/java/io/github/some_example_name/Screens/GameScreen.java
++++ b/core/src/main/java/io/github/some_example_name/Screens/GameScreen.java
+@@ -30,6 +30,7 @@ import io.github.some_example_name.model.TiledMapHelper;
+ import io.github.some_example_name.model.costumActors.Hud;
+ import io.github.some_example_name.model.entity.AttackHitbox;
+ import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
++import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.BossBehavior;
+ import io.github.some_example_name.model.entity.npc.ZoteEntity;
+ import io.github.some_example_name.model.enums.AnimationType;
+ import io.github.some_example_name.model.enums.MusicType;
+@@ -43,6 +44,24 @@ public class GameScreen extends AbstractScreen{
+     private ShapeRenderer shapeRenderer;
+     private GameProcessor gameProcessor;
+     private final Game game;
++
++    // ── Camera shake ─────────────────────────────────────────────────────────
++    // shakeMagnitude is the peak offset in pixels; shakeTimer/shakeDuration
++    // together drive a linear decay from full strength down to 0 so the shake
++    // eases out instead of cutting off abruptly.
++    private float shakeTimer     = 0f;
++    private float shakeDuration  = 0f;
++    private float shakeMagnitude = 0f;
++
++    private void triggerShake(float duration, float magnitude) {
++        // Only replace an in-progress shake with a stronger one — a boss slam
++        // shouldn't get swallowed by a weaker hit-flinch shake still playing.
++        if (magnitude >= shakeMagnitude || shakeTimer <= 0f) {
++            shakeDuration  = duration;
++            shakeTimer     = duration;
++            shakeMagnitude = magnitude;
++        }
++    }
+     private final String slotId;
+     private final GameSaveData saveData;
+     Vector3 target = new Vector3();
+@@ -249,6 +268,25 @@ public class GameScreen extends AbstractScreen{
+ 
+             game.update(delta);
+             hud.update(delta, game.getPlayer());
++
++            // ── Camera shake triggers ────────────────────────────────────────
++            // isDamaged() is a single-frame pulse: DamageResolver resets it to
++            // false at the top of every resolve() call, then sets it true only
++            // on the frame a hit actually lands, so this fires exactly once per hit.
++            if (game.getPlayer().isDamaged()) {
++                triggerShake(0.25f, 6f);
++            }
++            // poundLanded is set by BossBehavior on mace-slam/leap/power-slam
++            // ground impacts but was never actually consumed anywhere before.
++            for (EnemyEntity e : game.getEnemies()) {
++                if (e.getBehavior() instanceof BossBehavior) {
++                    BossBehavior boss = (BossBehavior) e.getBehavior();
++                    if (boss.isPoundLanded()) {
++                        triggerShake(0.35f, 14f);
++                        boss.clearPoundLanded();
++                    }
++                }
++            }
+         }
+         target.set(game.getPlayer().getPosition().x, game.getPlayer().getPosition().y + 120, 0);
+         camera.position.lerp(target, 0.1f);
+@@ -307,6 +345,16 @@ public class GameScreen extends AbstractScreen{
+             }
+         }
+ 
++        // Shake is applied last, after room clamping, so it isn't clamped away
++        // and so it offsets whatever position the camera settled on this frame.
++        if (shakeTimer > 0f) {
++            shakeTimer -= delta;
++            float t   = Math.max(0f, shakeTimer / shakeDuration); // 1 -> 0
++            float amp = shakeMagnitude * t;
++            camera.position.x += MathUtils.random(-amp, amp);
++            camera.position.y += MathUtils.random(-amp, amp);
++        }
++
+         camera.update();
+ 
+         batch.setProjectionMatrix(camera.combined);
+diff --git a/core/src/main/java/io/github/some_example_name/Screens/LoadMenuScreen.java b/core/src/main/java/io/github/some_example_name/Screens/LoadMenuScreen.java
+index 8fda412..d777396 100644
+--- a/core/src/main/java/io/github/some_example_name/Screens/LoadMenuScreen.java
++++ b/core/src/main/java/io/github/some_example_name/Screens/LoadMenuScreen.java
+@@ -68,9 +68,6 @@ public class LoadMenuScreen extends AbstractScreen {
+ 
+     @Override
+     public void render(float delta) {
+-
+-
+-        stage.act(delta);
+-        stage.draw();
++        super.render(delta);
+     }
+ }
+diff --git a/core/src/main/java/io/github/some_example_name/Screens/MainMenuScreen.java b/core/src/main/java/io/github/some_example_name/Screens/MainMenuScreen.java
+index 1cc9511..4f17a24 100644
+--- a/core/src/main/java/io/github/some_example_name/Screens/MainMenuScreen.java
++++ b/core/src/main/java/io/github/some_example_name/Screens/MainMenuScreen.java
+@@ -25,6 +25,10 @@ public class MainMenuScreen extends AbstractScreen   {
+     public void show() {
+         super.show();
+ 
++        // [FIXED] Main menu never actually started its music — MAIN_MENU was
++        // defined in MusicType but nothing ever called playMusic() with it.
++        io.github.some_example_name.Manager.GameAssetManager.playMusic(
++            io.github.some_example_name.model.enums.MusicType.MAIN_MENU);
+ 
+         Stack stack =new  Stack();
+ 
+@@ -98,9 +102,7 @@ public class MainMenuScreen extends AbstractScreen   {
+ 
+     @Override
+     public void render(float delta) {
+-
+-        stage.act(delta);
+-        stage.draw();
++        super.render(delta);
+     }
+ 
+     @Override
+diff --git a/core/src/main/java/io/github/some_example_name/model/Game.java b/core/src/main/java/io/github/some_example_name/model/Game.java
+index aefa422..da1401d 100644
+--- a/core/src/main/java/io/github/some_example_name/model/Game.java
++++ b/core/src/main/java/io/github/some_example_name/model/Game.java
+@@ -121,6 +121,13 @@ public class Game {
+                         e.setLanded(true);
+                         e.getVelocity().set(0f, 0f);
+                     }
++                    // [FIXED] stateTime was never ticked for dead enemies (this
++                    // whole branch used to `continue` before ever reaching
++                    // e.update()), so the death animation stayed frozen on frame 0
++                    // for the entire fall — the corpse would drop and land with no
++                    // visible animation at all. update() is dead-state-safe now: it
++                    // only advances stateTime while !landed and does nothing else.
++                    e.update(delta, player);
+                 }
+                 continue;
+             }
+diff --git a/core/src/main/java/io/github/some_example_name/model/entity/DamageResolver.java b/core/src/main/java/io/github/some_example_name/model/entity/DamageResolver.java
+index 276d8a2..ead6b26 100644
+--- a/core/src/main/java/io/github/some_example_name/model/entity/DamageResolver.java
++++ b/core/src/main/java/io/github/some_example_name/model/entity/DamageResolver.java
+@@ -14,6 +14,12 @@ public class DamageResolver {
+     private static final float PLAYER_I_FRAME_DURATION = 1.0f;
+     private              float playerIFrameTimer        = 0f;
+ 
++    // ── Knockback tuning ────────────────────────────────────────────────────
++    private static final float PLAYER_KNOCKBACK_X = 280f;
++    private static final float PLAYER_KNOCKBACK_Y = 320f;
++    private static final float ENEMY_KNOCKBACK_X  = 220f;
++    private static final float ENEMY_KNOCKBACK_Y  = 260f;
++
+     private final Rectangle playerRect = new Rectangle();
+ 
+     /**
+@@ -51,6 +57,15 @@ public class DamageResolver {
+                     enemy.takeDamage(atk.damage);
+                     atk.hitEnemies.add(enemy);
+ 
++                    // [ADDED] Knockback: shove the enemy away from the player,
++                    // unless the hit just killed it — a dying enemy is instead
++                    // handed off to the death-fall gravity in EnemyEntity/Game,
++                    // and stomping its velocity here would fight that.
++                    if (!enemy.isDead()) {
++                        float dir = enemy.getPosition().x >= player.getPosition().x ? 1f : -1f;
++                        enemy.applyKnockback(dir * ENEMY_KNOCKBACK_X, ENEMY_KNOCKBACK_Y);
++                    }
++
+                     // Only nail hits grant soul — spells cost soul, they don't earn it.
+                     if (atk.animationType == AnimationType.NAIL_SLASH) {
+                         int soulGain = Math.round(
+@@ -75,7 +90,7 @@ public class DamageResolver {
+             if (atk.hasHitPlayer) continue;
+ 
+             if (playerRect.overlaps(atk.bounds)) {
+-                hitPlayer(player, atk.damage);
++                hitPlayer(player, atk.damage, atk.bounds.x + atk.bounds.width / 2f);
+ 
+                 // [FIXED] Mark as having hit the player instead of destroying it.
+                 // This allows projectile hitboxes (like shockwaves) to continue traveling visually.
+@@ -96,7 +111,7 @@ public class DamageResolver {
+         for (EnemyEntity enemy : enemies) {
+             if (enemy.isDead()) continue;
+             if (playerRect.overlaps(enemy.getHitboxRect())) {
+-                hitPlayer(player, enemy.getBehavior().getContactDamage());
++                hitPlayer(player, enemy.getBehavior().getContactDamage(), enemy.getPosition().x);
+                 return;
+             }
+         }
+@@ -138,7 +153,7 @@ public class DamageResolver {
+ 
+         for (Rectangle zone : deadlyZones) {
+             if (playerRect.overlaps(zone)) {
+-                hitPlayer(player, 3); // Applies exactly 3 damage as requested
++                hitPlayer(player, 3, zone.x + zone.width / 2f); // Applies exactly 3 damage as requested
+                 return; // Break out early so we only take damage once per frame
+             }
+         }
+@@ -154,7 +169,7 @@ public class DamageResolver {
+         return playerIFrameTimer > 0f;
+     }
+ 
+-    private void hitPlayer(Entity player, int damage) {
++    private void hitPlayer(Entity player, int damage, float sourceX) {
+         if (player.isGodMode()) return;
+         if (damage <= 0) return;
+ 
+@@ -164,6 +179,10 @@ public class DamageResolver {
+         player.setInvincible(true);
+         playerIFrameTimer = PLAYER_I_FRAME_DURATION;
+         io.github.some_example_name.Manager.GameAssetManager.playSound(SoundType.PLAYER_HURT);
++
++        // [ADDED] Knockback: shove the player away from whatever hit them.
++        float dir = player.getPosition().x >= sourceX ? 1f : -1f;
++        player.applyKnockback(dir * PLAYER_KNOCKBACK_X, PLAYER_KNOCKBACK_Y);
+     }
+ 
+     private void tickAndPruneHitboxes(float delta, Array<AttackHitbox> hitboxes) {
+diff --git a/core/src/main/java/io/github/some_example_name/model/entity/enemyEntity/EnemyEntity.java b/core/src/main/java/io/github/some_example_name/model/entity/enemyEntity/EnemyEntity.java
+index b3e6bb7..4cdc479 100644
+--- a/core/src/main/java/io/github/some_example_name/model/entity/enemyEntity/EnemyEntity.java
++++ b/core/src/main/java/io/github/some_example_name/model/entity/enemyEntity/EnemyEntity.java
+@@ -42,6 +42,22 @@ public class EnemyEntity implements IDamageable {
+     private static final float I_FRAME_DURATION = 0f;
+     private              float invincibilityTimer = 0f;
+ 
++    // ── Knockback ─────────────────────────────────────────────────────────────
++    // While knockbackTimer > 0, EnemyEntity.update() skips behavior.update()
++    // entirely (which would otherwise overwrite velocity.x every frame with the
++    // AI's own movement) and instead lets this impulse + gravity carry the
++    // enemy. EnemyCollisionLogic still runs every frame regardless, so walls/
++    // ground stop the enemy normally while it's flying back.
++    private static final float KNOCKBACK_DURATION = 0.15f;
++    private static final float KNOCKBACK_GRAVITY  = 500f;
++    private float knockbackTimer = 0f;
++
++    public void applyKnockback(float vx, float vy) {
++        velocity.set(vx, vy);
++        knockbackTimer = KNOCKBACK_DURATION;
++    }
++    public boolean isKnockedBack() { return knockbackTimer > 0f; }
++
+     private final IEnemyBehavior behavior;
+ 
+     private AnimationType currentAnimation;
+@@ -90,13 +106,34 @@ public class EnemyEntity implements IDamageable {
+ 
+     public void update(float delta, Entity player) {
+         System.out.println("entityEnemy" + hp);
+-        if (dead) return;
++        if (dead) {
++            // [FIXED] stateTime used to freeze the instant an enemy died, because
++            // this early-return skipped it entirely — the death animation never
++            // advanced past frame 0 while the corpse fell, so it looked like the
++            // enemy teleported straight to its final dead pose instead of actually
++            // falling and landing. Game.update() still drives the actual falling
++            // physics (applyDeathGravity/collision) for un-landed corpses; this
++            // just keeps the animation itself playing during that fall.
++            if (!landed) {
++                stateTime += delta;
++            }
++            return;
++        }
+ 
+         if (invincibilityTimer > 0f) {
+             invincibilityTimer = Math.max(0f, invincibilityTimer - delta);
+         }
+ 
+         stateTime += delta;
++
++        if (knockbackTimer > 0f) {
++            knockbackTimer = Math.max(0f, knockbackTimer - delta);
++            velocity.y -= KNOCKBACK_GRAVITY * delta;
++            position.x += velocity.x * delta;
++            position.y += velocity.y * delta;
++            return; // skip normal AI movement while being knocked back
++        }
++
+         behavior.update(delta, player);
+     }
+ 
+diff --git a/core/src/main/java/io/github/some_example_name/model/entity/player/Entity.java b/core/src/main/java/io/github/some_example_name/model/entity/player/Entity.java
+index ecedc82..ae12a6a 100644
+--- a/core/src/main/java/io/github/some_example_name/model/entity/player/Entity.java
++++ b/core/src/main/java/io/github/some_example_name/model/entity/player/Entity.java
+@@ -66,6 +66,22 @@ public class Entity implements IDamageable {
+     private int     numOfJumps  = 2;
+ 
+     private Vector2         velocity         = new Vector2();
++
++    // ── Knockback ─────────────────────────────────────────────────────────────
++    // While knockbackTimer > 0, PlayerMovement skips all input-driven velocity
++    // changes (movement/jump/dash) and instead lets this impulse + gravity carry
++    // the player, so getting hit always visibly shoves them back regardless of
++    // what keys are held.
++    private static final float KNOCKBACK_DURATION = 0.18f;
++    private float knockbackTimer = 0f;
++
++    public void applyKnockback(float vx, float vy) {
++        velocity.set(vx, vy);
++        knockbackTimer = KNOCKBACK_DURATION;
++    }
++    public boolean isKnockedBack()            { return knockbackTimer > 0f; }
++    public void    tickKnockback(float delta) { knockbackTimer = Math.max(0f, knockbackTimer - delta); }
++
+     private PlayerMovement movementLogic=new PlayerMovement(this);
+     private PlayerSpecialAbility specialAbility=new PlayerSpecialAbility(this);
+     private PlayerAttackLogic attackLogic=new PlayerAttackLogic(this);
+diff --git a/core/src/main/java/io/github/some_example_name/model/entity/player/PlayerMovement.java b/core/src/main/java/io/github/some_example_name/model/entity/player/PlayerMovement.java
+index bc7dac8..cd963da 100644
+--- a/core/src/main/java/io/github/some_example_name/model/entity/player/PlayerMovement.java
++++ b/core/src/main/java/io/github/some_example_name/model/entity/player/PlayerMovement.java
+@@ -41,6 +41,18 @@ public class PlayerMovement {
+     }
+ 
+     public void update(float delta) {
++        // ── Knockback (early-return branch) ─────────────────────────────────
++        // Must be checked before anything else touches velocity.x/y — every
++        // other branch below (movement, dash, jump) unconditionally overwrites
++        // velocity based on held keys, which would erase an impulse the very
++        // frame it was applied.
++        if (entity.isKnockedBack()) {
++            entity.tickKnockback(delta);
++            entity.getVelocity().y -= GRAVITY * delta;
++            entity.setCurrentAnimation(AnimationType.KNIGHT_Damaged);
++            doTheChanges(entity.getVelocity(), delta);
++            return;
++        }
+         if (entity.isCastLocked()) {
+             doTheChanges(entity.getVelocity(), delta);
+             return;

@@ -58,14 +58,16 @@ public class GameAssetManager {
     public static final Array<Sound> zoteGrowlSounds = new Array<>();
 
     // ── Custom cursor ───────────────────────────────────────────────────────
-    // A small pointer-shaped PNG with a transparent background works best.
-    // HOTSPOT_X/Y is the pixel inside that image that corresponds to the
-    // actual click point (0,0 = top-left of the image) — tune it to wherever
-    // your cursor's "tip" is once you've got the real art in.
+    // [FIXED] Relying on Gdx.graphics.newCursor()/setCursor() to swap the OS
+    // hardware pointer turned out unreliable across drivers/OSes (silently
+    // ignored with no error, regardless of image size). Now we hide the native
+    // pointer with a 1x1 transparent cursor — about as minimal as an image can
+    // get, so it reliably applies everywhere — and AbstractScreen draws
+    // cursorTexture as a normal sprite at the mouse position every frame
+    // instead. That always works since it's just a texture draw, no OS/driver
+    // cursor support required.
     private static final String CURSOR_PATH = "ui/cursor-nail.png";
-    private static final int    CURSOR_HOTSPOT_X = 0;
-    private static final int    CURSOR_HOTSPOT_Y = 0;
-    private static Cursor customCursor;
+    public static Texture cursorTexture;
 
     public static void init(){
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -116,16 +118,22 @@ public class GameAssetManager {
     }
 
     /**
-     * Swaps the OS pointer for a custom in-game cursor. Defensive like the
-     * sound loading above — a missing/bad image logs an error and leaves the
-     * system cursor in place instead of crashing startup.
+     * Hides the native OS pointer and loads the nail-cursor art as a plain
+     * texture so AbstractScreen can draw it as a sprite every frame — see the
+     * block comment above CURSOR_PATH for why we stopped using a hardware
+     * cursor. Defensive like the sound loading above: a missing/bad image
+     * logs an error and leaves the system cursor visible instead of crashing.
      */
     private static void loadCursor() {
         try {
-            Pixmap pixmap = new Pixmap(Gdx.files.internal(CURSOR_PATH));
-            customCursor = Gdx.graphics.newCursor(pixmap, CURSOR_HOTSPOT_X, CURSOR_HOTSPOT_Y);
-            Gdx.graphics.setCursor(customCursor);
-            pixmap.dispose(); // newCursor() copies what it needs; the Pixmap itself isn't needed after this
+            cursorTexture = new Texture(Gdx.files.internal(CURSOR_PATH));
+
+            Pixmap invisible = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            invisible.setColor(0, 0, 0, 0);
+            invisible.fill();
+            Cursor hiddenCursor = Gdx.graphics.newCursor(invisible, 0, 0);
+            Gdx.graphics.setCursor(hiddenCursor);
+            invisible.dispose();
         } catch (Exception e) {
             Gdx.app.error("GameAssetManager", "Missing custom cursor image: " + CURSOR_PATH, e);
         }

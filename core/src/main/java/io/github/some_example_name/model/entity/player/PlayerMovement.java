@@ -41,6 +41,18 @@ public class PlayerMovement {
     }
 
     public void update(float delta) {
+        // ── Knockback (early-return branch) ─────────────────────────────────
+        // Must be checked before anything else touches velocity.x/y — every
+        // other branch below (movement, dash, jump) unconditionally overwrites
+        // velocity based on held keys, which would erase an impulse the very
+        // frame it was applied.
+        if (entity.isKnockedBack()) {
+            entity.tickKnockback(delta);
+            entity.getVelocity().y -= GRAVITY * delta;
+            entity.setCurrentAnimation(AnimationType.KNIGHT_Damaged);
+            doTheChanges(entity.getVelocity(), delta);
+            return;
+        }
         if (entity.isCastLocked()) {
             doTheChanges(entity.getVelocity(), delta);
             return;

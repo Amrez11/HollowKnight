@@ -1,6 +1,7 @@
 package io.github.some_example_name.Screens;
 
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -26,7 +27,37 @@ public abstract  class AbstractScreen  implements Screen {
     protected Label.LabelStyle labelStyle;
     protected TextButton.TextButtonStyle textButtonStyle;
 
+    // ── Custom cursor (drawn, not OS hardware cursor) ───────────────────────
+    // [FIXED] Gdx.graphics.newCursor()/setCursor() swapping the OS pointer
+    // turned out unreliable — several GPU drivers/OSes cap or just ignore
+    // custom hardware cursors with no error at all, which is why the earlier
+    // fix (shrinking the image) still didn't show anything for some setups.
+    // Drawing our own sprite at the mouse position instead always works,
+    // since it's just a normal texture draw — no OS/driver cursor support
+    // needed. Lives here, not in GameScreen, so every screen gets it for free.
+    private static SpriteBatch cursorBatch;
+    private static OrthographicCamera cursorCamera;
 
+    private void drawCustomCursor() {
+        Texture tex = GameAssetManager.cursorTexture;
+        if (tex == null) return;
+
+        if (cursorBatch == null) {
+            cursorBatch  = new SpriteBatch();
+            cursorCamera = new OrthographicCamera();
+        }
+        cursorCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        cursorCamera.update();
+
+        float size = 32f; // on-screen cursor size in pixels, independent of the source art's resolution
+        float x = Gdx.input.getX();
+        float y = Gdx.graphics.getHeight() - Gdx.input.getY(); // input Y is top-down, draw Y is bottom-up
+
+        cursorBatch.setProjectionMatrix(cursorCamera.combined);
+        cursorBatch.begin();
+        cursorBatch.draw(tex, x, y - size, size, size);
+        cursorBatch.end();
+    }
 
     @Override
     public void show() {
@@ -62,6 +93,7 @@ public abstract  class AbstractScreen  implements Screen {
 
         stage.act(delta);
         stage.draw();
+        drawCustomCursor();
     }
 
     @Override

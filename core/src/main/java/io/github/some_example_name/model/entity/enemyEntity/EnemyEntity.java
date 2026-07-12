@@ -42,6 +42,22 @@ public class EnemyEntity implements IDamageable {
     private static final float I_FRAME_DURATION = 0f;
     private              float invincibilityTimer = 0f;
 
+    // ── Knockback ─────────────────────────────────────────────────────────────
+    // While knockbackTimer > 0, EnemyEntity.update() skips behavior.update()
+    // entirely (which would otherwise overwrite velocity.x every frame with the
+    // AI's own movement) and instead lets this impulse + gravity carry the
+    // enemy. EnemyCollisionLogic still runs every frame regardless, so walls/
+    // ground stop the enemy normally while it's flying back.
+    private static final float KNOCKBACK_DURATION = 0.15f;
+    private static final float KNOCKBACK_GRAVITY  = 500f;
+    private float knockbackTimer = 0f;
+
+    public void applyKnockback(float vx, float vy) {
+        velocity.set(vx, vy);
+        knockbackTimer = KNOCKBACK_DURATION;
+    }
+    public boolean isKnockedBack() { return knockbackTimer > 0f; }
+
     private final IEnemyBehavior behavior;
 
     private AnimationType currentAnimation;
@@ -90,13 +106,34 @@ public class EnemyEntity implements IDamageable {
 
     public void update(float delta, Entity player) {
         System.out.println("entityEnemy" + hp);
-        if (dead) return;
+        if (dead) {
+            // [FIXED] stateTime used to freeze the instant an enemy died, because
+            // this early-return skipped it entirely — the death animation never
+            // advanced past frame 0 while the corpse fell, so it looked like the
+            // enemy teleported straight to its final dead pose instead of actually
+            // falling and landing. Game.update() still drives the actual falling
+            // physics (applyDeathGravity/collision) for un-landed corpses; this
+            // just keeps the animation itself playing during that fall.
+            if (!landed) {
+                stateTime += delta;
+            }
+            return;
+        }
 
         if (invincibilityTimer > 0f) {
             invincibilityTimer = Math.max(0f, invincibilityTimer - delta);
         }
 
         stateTime += delta;
+
+        if (knockbackTimer > 0f) {
+            knockbackTimer = Math.max(0f, knockbackTimer - delta);
+            velocity.y -= KNOCKBACK_GRAVITY * delta;
+            position.x += velocity.x * delta;
+            position.y += velocity.y * delta;
+            return; // skip normal AI movement while being knocked back
+        }
+
         behavior.update(delta, player);
     }
 
@@ -175,9 +212,19 @@ public class EnemyEntity implements IDamageable {
     public boolean hasLanded()          { return landed; }
     public void    setLanded(boolean v) { landed = v; }
 
-    /** Simple gravity integration, used only while a corpse is settling onto the ground. */
+    /**
+     * Gravity + position integration for a corpse settling onto the ground.
+     * [FIXED] This used to only touch velocity.y, never position — living
+     * enemies get their position integrated inside their own behavior's
+     * update() (e.g. CrawlerBehavior), but that's skipped entirely once dead,
+     * and nothing replaced it here. Net effect: velocity.y kept accumulating
+     * downward every frame but the corpse's Y never actually changed, so it
+     * just hung in the air playing its death animation in place forever
+     * instead of dropping to the ground.
+     */
     public void applyDeathGravity(float delta) {
         velocity.y -= DEATH_GRAVITY * delta;
+        position.y += velocity.y * delta;
     }
 
     // ── Collision flags ───────────────────────────────────────────────────────

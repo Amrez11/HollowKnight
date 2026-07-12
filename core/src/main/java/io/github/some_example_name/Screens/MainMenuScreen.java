@@ -25,6 +25,10 @@ public class MainMenuScreen extends AbstractScreen   {
     public void show() {
         super.show();
 
+        // [FIXED] Main menu never actually started its music — MAIN_MENU was
+        // defined in MusicType but nothing ever called playMusic() with it.
+        io.github.some_example_name.Manager.GameAssetManager.playMusic(
+            io.github.some_example_name.model.enums.MusicType.MAIN_MENU);
 
         Stack stack =new  Stack();
 
@@ -98,9 +102,7 @@ public class MainMenuScreen extends AbstractScreen   {
 
     @Override
     public void render(float delta) {
-
-        stage.act(delta);
-        stage.draw();
+        super.render(delta);
     }
 
     @Override

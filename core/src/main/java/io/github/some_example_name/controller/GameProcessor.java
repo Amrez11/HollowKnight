@@ -13,23 +13,7 @@ import io.github.some_example_name.model.costumActors.GuideModal;
 import io.github.some_example_name.model.costumActors.PauseModel;
 import io.github.some_example_name.model.costumActors.SettingsModal;
 
-/**
- * Key bindings
- * ────────────────────────────────────────
- *  D      – move right
- *  A      – move left
- *  SPACE  – jump
- *  W      – dash
- *  E      – Focus (hold to heal)
- *  X      – Attack (nail swing)
- *  Q      – Vengeful Spirit (one-shot)
- *  R      – Howling Wraiths (one-shot)
- *  I      – inventory (charms)
- *  F      – interact / talk (Zote)
- *  ENTER  – advance dialogue
- *  ESCAPE – pause
- * ────────────────────────────────────────
- */
+
 public class GameProcessor implements InputProcessor {
 
     private final Game game;
@@ -82,10 +66,10 @@ public class GameProcessor implements InputProcessor {
                 }
             }
             case Input.Keys.ESCAPE -> {
-                if (game.isZoteDialogueActive()) break; // don't pause mid-conversation
-                game.setPaused(true);                                    // ← new
+                if (game.isZoteDialogueActive()) break;
+                game.setPaused(true);
                 PauseModel pauseModel = new PauseModel() {
-                    @Override public void onResume() { game.setPaused(false); this.hide(); }   // ← added setPaused(false)
+                    @Override public void onResume() { game.setPaused(false); this.hide(); }
                     @Override public void onExit()   { UiManager.setScreen(new MainMenuScreen()); }
                     @Override public void onSave() {
                         SaveManager.save(game, slotId, slotId);
@@ -142,7 +126,7 @@ public class GameProcessor implements InputProcessor {
             case Input.Keys.X     -> game.getPlayer().setAttackPressed(false);
             case Input.Keys.J     ->game.getPlayer().setOnBoss(false);
             case Input.Keys.O     -> game.getPlayer().getVelocity().y=5;
-            // Q, R: one-shot, no keyUp needed
+
         }
         return false;
     }

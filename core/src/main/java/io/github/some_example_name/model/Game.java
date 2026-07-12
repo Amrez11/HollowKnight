@@ -84,7 +84,7 @@ public class Game {
     // ─────────────────────────────────────────────────────────────────────────
 
     public void update(float delta) {
-        io.github.some_example_name.Manager.AchievementManager.updateTimer(delta);
+        AchievementManager.updateTimer(delta);
         player.update(delta);
         playerCollision.checkCollisions();
         if (player.isOnBoss()) {
@@ -101,9 +101,9 @@ public class Game {
                 else if (e.getBehavior() instanceof LaserFlyerBehavior) type = "LASER_FLYER";
                 else if (e.getBehavior() instanceof CrystalFlyerBehavior) type = "FLYER";
                 e.setDeathProcessed(true);
-                io.github.some_example_name.Manager.AchievementManager.onEnemyDefeated(type);
+                AchievementManager.onEnemyDefeated(type);
                 if (type.equals("BOSS")) {
-                    io.github.some_example_name.Manager.AchievementManager.onGameCompleted(); // Triggers Speedrun/Completion achievements
+                    AchievementManager.onGameCompleted(); // Triggers Speedrun/Completion achievements
                     io.github.some_example_name.Manager.UiManager.setScreen(new io.github.some_example_name.Screens.VictoryScreen());
                 }
 
@@ -121,6 +121,13 @@ public class Game {
                         e.setLanded(true);
                         e.getVelocity().set(0f, 0f);
                     }
+                    // [FIXED] stateTime was never ticked for dead enemies (this
+                    // whole branch used to `continue` before ever reaching
+                    // e.update()), so the death animation stayed frozen on frame 0
+                    // for the entire fall — the corpse would drop and land with no
+                    // visible animation at all. update() is dead-state-safe now: it
+                    // only advances stateTime while !landed and does nothing else.
+                    e.update(delta, player);
                 }
                 continue;
             }

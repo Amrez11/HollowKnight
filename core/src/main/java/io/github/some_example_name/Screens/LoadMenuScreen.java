@@ -68,9 +68,6 @@ public class LoadMenuScreen extends AbstractScreen {
 
     @Override
     public void render(float delta) {
-
-
-        stage.act(delta);
-        stage.draw();
+        super.render(delta);
     }
 }

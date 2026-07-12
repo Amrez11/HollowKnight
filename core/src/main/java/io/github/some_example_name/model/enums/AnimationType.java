@@ -10,7 +10,7 @@ public enum AnimationType {
     KNIGHT_Jump(12,"animation/Airborne.png"),
     KNIGHT_DJump(8,"animation/Double_Jump.png"),
     KNIGHT_WallJump(9,"animation/Walljump.png"),
-    KNIGHT_Focus(4,"animation/Focus.png"),
+    KNIGHT_Focus(6,"animation/Focus Get.png"),
     KNIGHT_HowlingWraiths(7,"animation/Scream.png"),
     KNIGHT_VengefulSpirit(9,"animation/Fireball_Cast.png"),
     KNIGHT_Attack(5,"animation/SlashAlt.png"),

@@ -66,6 +66,22 @@ public class Entity implements IDamageable {
     private int     numOfJumps  = 2;
 
     private Vector2         velocity         = new Vector2();
+
+    // ── Knockback ─────────────────────────────────────────────────────────────
+    // While knockbackTimer > 0, PlayerMovement skips all input-driven velocity
+    // changes (movement/jump/dash) and instead lets this impulse + gravity carry
+    // the player, so getting hit always visibly shoves them back regardless of
+    // what keys are held.
+    private static final float KNOCKBACK_DURATION = 0.18f;
+    private float knockbackTimer = 0f;
+
+    public void applyKnockback(float vx, float vy) {
+        velocity.set(vx, vy);
+        knockbackTimer = KNOCKBACK_DURATION;
+    }
+    public boolean isKnockedBack()            { return knockbackTimer > 0f; }
+    public void    tickKnockback(float delta) { knockbackTimer = Math.max(0f, knockbackTimer - delta); }
+
     private PlayerMovement movementLogic=new PlayerMovement(this);
     private PlayerSpecialAbility specialAbility=new PlayerSpecialAbility(this);
     private PlayerAttackLogic attackLogic=new PlayerAttackLogic(this);

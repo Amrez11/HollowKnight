@@ -30,6 +30,7 @@ import io.github.some_example_name.model.TiledMapHelper;
 import io.github.some_example_name.model.costumActors.Hud;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
+import io.github.some_example_name.model.entity.enemyEntity.enemyBehavior.BossBehavior;
 import io.github.some_example_name.model.entity.npc.ZoteEntity;
 import io.github.some_example_name.model.enums.AnimationType;
 import io.github.some_example_name.model.enums.MusicType;
@@ -43,6 +44,24 @@ public class GameScreen extends AbstractScreen{
     private ShapeRenderer shapeRenderer;
     private GameProcessor gameProcessor;
     private final Game game;
+
+    // ── Camera shake ─────────────────────────────────────────────────────────
+    // shakeMagnitude is the peak offset in pixels; shakeTimer/shakeDuration
+    // together drive a linear decay from full strength down to 0 so the shake
+    // eases out instead of cutting off abruptly.
+    private float shakeTimer     = 0f;
+    private float shakeDuration  = 0f;
+    private float shakeMagnitude = 0f;
+
+    private void triggerShake(float duration, float magnitude) {
+        // Only replace an in-progress shake with a stronger one — a boss slam
+        // shouldn't get swallowed by a weaker hit-flinch shake still playing.
+        if (magnitude >= shakeMagnitude || shakeTimer <= 0f) {
+            shakeDuration  = duration;
+            shakeTimer     = duration;
+            shakeMagnitude = magnitude;
+        }
+    }
     private final String slotId;
     private final GameSaveData saveData;
     Vector3 target = new Vector3();
@@ -249,6 +268,25 @@ public class GameScreen extends AbstractScreen{
 
             game.update(delta);
             hud.update(delta, game.getPlayer());
+
+            // ── Camera shake triggers ────────────────────────────────────────
+            // isDamaged() is a single-frame pulse: DamageResolver resets it to
+            // false at the top of every resolve() call, then sets it true only
+            // on the frame a hit actually lands, so this fires exactly once per hit.
+            if (game.getPlayer().isDamaged()) {
+                triggerShake(0.6f, 30f);
+            }
+            // poundLanded is set by BossBehavior on mace-slam/leap/power-slam
+            // ground impacts but was never actually consumed anywhere before.
+            for (EnemyEntity e : game.getEnemies()) {
+                if (e.getBehavior() instanceof BossBehavior) {
+                    BossBehavior boss = (BossBehavior) e.getBehavior();
+                    if (boss.isPoundLanded()) {
+                        triggerShake(0.45f, 26f);
+                        boss.clearPoundLanded();
+                    }
+                }
+            }
         }
         target.set(game.getPlayer().getPosition().x, game.getPlayer().getPosition().y + 120, 0);
         camera.position.lerp(target, 0.1f);
@@ -305,6 +343,16 @@ public class GameScreen extends AbstractScreen{
                 float maxY = currentBound.y + currentBound.height - camHalfHeight;
                 camera.position.y = MathUtils.clamp(camera.position.y, minY, maxY);
             }
+        }
+
+        // Shake is applied last, after room clamping, so it isn't clamped away
+        // and so it offsets whatever position the camera settled on this frame.
+        if (shakeTimer > 0f) {
+            shakeTimer -= delta;
+            float t   = Math.max(0f, shakeTimer / shakeDuration); // 1 -> 0
+            float amp = shakeMagnitude * t;
+            camera.position.x += MathUtils.random(-amp, amp);
+            camera.position.y += MathUtils.random(-amp, amp);
         }
 
         camera.update();

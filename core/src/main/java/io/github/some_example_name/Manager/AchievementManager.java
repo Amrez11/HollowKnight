@@ -1,5 +1,7 @@
 package io.github.some_example_name.Manager;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -13,6 +15,30 @@ import java.util.Set;
 public class AchievementManager {
     private static final Set<Achievement> unlockedAchievements = new HashSet<>();
     private static final Set<String> enemiesDefeated = new HashSet<>();
+
+    // [FIXED] Unlocks used to live only in this static in-memory set (and,
+    // separately, inside whatever per-slot save file you manually wrote via
+    // the pause menu). That meant opening "Achievements" from the main menu —
+    // without having loaded a save this session — always showed everything
+    // locked, which looked exactly like "achievements don't get saved". This
+    // makes unlocks persist immediately, account-wide, independent of save
+    // slots, the moment they happen.
+    private static final String PREFS_NAME = "hollow-knight-achievements";
+    private static Preferences prefs;
+
+    private static Preferences prefs() {
+        if (prefs == null) prefs = Gdx.app.getPreferences(PREFS_NAME);
+        return prefs;
+    }
+
+    /** Call once at startup (after Gdx.app exists) to restore prior unlocks. */
+    public static void loadPersisted() {
+        for (Achievement a : Achievement.values()) {
+            if (prefs().getBoolean(a.name(), false)) {
+                unlockedAchievements.add(a);
+            }
+        }
+    }
 
     private static float gameTimer = 0f;
     private static final float SPEEDRUN_LIMIT = 300f; // 5 minutes in seconds
@@ -63,6 +89,8 @@ public class AchievementManager {
     private static void unlock(Achievement achievement) {
         if (!unlockedAchievements.contains(achievement)) {
             unlockedAchievements.add(achievement);
+            prefs().putBoolean(achievement.name(), true);
+            prefs().flush();
             showNotification(achievement);
         }
     }
@@ -110,8 +138,16 @@ public class AchievementManager {
      */
     public static void restoreState(Set<Achievement> unlocked, Set<String> enemyTypesDefeated,
                                     int killedCount, int deathCount, float timer) {
-        unlockedAchievements.clear();
+        // [FIXED] Union with (rather than replace by) whatever's already unlocked
+        // globally, so loading an older/different save can never make an
+        // already-earned achievement look locked again.
         unlockedAchievements.addAll(unlocked);
+        for (Achievement a : unlocked) {
+            if (!prefs().getBoolean(a.name(), false)) {
+                prefs().putBoolean(a.name(), true);
+            }
+        }
+        prefs().flush();
         enemiesDefeated.clear();
         enemiesDefeated.addAll(enemyTypesDefeated);
         enemiesKilledCount = killedCount;
