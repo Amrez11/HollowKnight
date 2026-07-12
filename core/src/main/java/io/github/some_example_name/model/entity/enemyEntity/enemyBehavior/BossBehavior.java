@@ -2,6 +2,7 @@ package io.github.some_example_name.model.entity.enemyEntity.enemyBehavior;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
@@ -252,6 +253,7 @@ public class BossBehavior implements IEnemyBehavior {
     // ── Hitbox spawners ───────────────────────────────────────────────────────
 
     private void spawnMaceHitbox() {
+        GameAssetManager.playSound(SoundType.BOSS_MACE_SLAM);
         float bossFloor = self.getHitboxBottom();
         float x = self.isLookingRight() ? self.getHitboxRight() : self.getHitboxLeft() - MACE_HB_W;
 
@@ -266,6 +268,7 @@ public class BossBehavior implements IEnemyBehavior {
     }
 
     private void spawnLeapLandingHitbox() {
+        GameAssetManager.playSound(SoundType.BOSS_LEAP_LAND);
         float cx = (self.getHitboxLeft() + self.getHitboxRight()) / 2f;
         pendingHitboxes.add(new AttackHitbox(
             cx - LEAP_HB_W / 2f, self.getHitboxBottom(),
@@ -278,6 +281,7 @@ public class BossBehavior implements IEnemyBehavior {
     }
 
     private void spawnPowerSlamHitboxes() {
+        GameAssetManager.playSound(SoundType.BOSS_POWER_SLAM);
         float cx    = (self.getHitboxLeft() + self.getHitboxRight()) / 2f;
         float floor = self.getHitboxBottom();
 
@@ -367,10 +371,12 @@ public class BossBehavior implements IEnemyBehavior {
         switch (move) {
             case MACE_SLAM:
                 facePlayer(dx);
+                GameAssetManager.playSound(SoundType.BOSS_MACE_WINDUP);
                 enterState(State.MACE_WINDUP);
                 break;
             case CHARGE_RUN:
                 facePlayer(dx);
+                GameAssetManager.playSound(SoundType.BOSS_CHARGE);
                 self.getVelocity().x = dir * speed;
                 enterState(State.CHARGE);
                 break;
@@ -399,6 +405,7 @@ public class BossBehavior implements IEnemyBehavior {
     private void checkPhaseTransition() {
         if (!phaseTwo && state != State.STUN && self.getHp() <= self.getMaxHp() / 2) {
             self.getVelocity().set(0, 0);
+            GameAssetManager.playSound(SoundType.BOSS_STUN);
             enterState(State.STUN);
         }
     }

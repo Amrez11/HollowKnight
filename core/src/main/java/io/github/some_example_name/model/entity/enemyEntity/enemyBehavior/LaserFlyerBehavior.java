@@ -2,6 +2,7 @@ package io.github.some_example_name.model.entity.enemyEntity.enemyBehavior;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.enemyEntity.EnemyEntity;
 import io.github.some_example_name.model.entity.player.Entity;
@@ -23,6 +24,7 @@ public class LaserFlyerBehavior implements IEnemyBehavior {
     private static final float ENRAGE_SPEED      = 500f;
     private static final float ENRAGE_TIMEOUT    = 3f;    // safety cap
     private static final float ARRIVAL_THRESHOLD = 20f;
+    private static final float COOLDOWN_DURATION = 1.5f;  // breather between attack cycles
 
     private static final float LASER_LENGTH = 2000f;
     private static final float LASER_HEIGHT = 50f;
@@ -31,7 +33,7 @@ public class LaserFlyerBehavior implements IEnemyBehavior {
 
     private EnemyEntity self;
 
-    private enum State { IDLE, CHARGE, FIRE, ENRAGE }
+    private enum State { IDLE, CHARGE, FIRE, ENRAGE, COOLDOWN }
     private State state      = State.IDLE;
     private float stateTimer = 0f;
 
@@ -75,7 +77,10 @@ public class LaserFlyerBehavior implements IEnemyBehavior {
                 self.getVelocity().set(0, 0);
                 setAnimation(AnimationType.LASER_FLYER_IDLE);
                 self.setLookingRight(dx >= 0);
-                if (dist < DETECT_RANGE) enterState(State.CHARGE);
+                if (dist < DETECT_RANGE) {
+                    GameAssetManager.playSound(SoundType.LASER_FLYER_CHARGE);
+                    enterState(State.CHARGE);
+                }
                 break;
 
             case CHARGE:
@@ -102,10 +107,22 @@ public class LaserFlyerBehavior implements IEnemyBehavior {
                 // CURRENT position this frame, so this homes continuously.
                 if (dist <= ARRIVAL_THRESHOLD || stateTimer >= ENRAGE_TIMEOUT) {
                     self.getVelocity().set(0, 0);
-                    enterState(State.IDLE);
+                    enterState(State.COOLDOWN);
                 } else {
                     self.setLookingRight(dx >= 0);
                     self.getVelocity().set((dx / dist) * ENRAGE_SPEED, (dy / dist) * ENRAGE_SPEED);
+                }
+                break;
+
+            case COOLDOWN:
+                // Forced breather so the flyer can't immediately re-detect
+                // the player and chain straight into another charge/fire —
+                // this was causing back-to-back lasers with no gap.
+                self.getVelocity().set(0, 0);
+                setAnimation(AnimationType.LASER_FLYER_IDLE);
+                self.setLookingRight(dx >= 0);
+                if (stateTimer >= COOLDOWN_DURATION) {
+                    enterState(State.IDLE);
                 }
                 break;
         }
@@ -115,6 +132,7 @@ public class LaserFlyerBehavior implements IEnemyBehavior {
     }
 
     private void fireLaser() {
+        GameAssetManager.playSound(SoundType.LASER_FLYER_FIRE);
         float x;
         if (self.isLookingRight()) {
             x = self.getHitboxRight();

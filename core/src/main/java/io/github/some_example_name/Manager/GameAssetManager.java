@@ -45,27 +45,14 @@ public class GameAssetManager {
     private static Music currentMusic;
     private static MusicType currentMusicType;
 
-    // ── Zote voice SFX ─────────────────────────────────────────────────────
-    // NOTE: these files don't exist in the repo yet — add short growl/grumble
-    // clips at these paths (assets/audio/zote/) before they'll actually play.
-    // Loading is defensive (per-file try/catch) so a missing clip never
-    // crashes startup — Zote's dialogue still works, just silently.
     private static final String[] ZOTE_GROWL_PATHS = {
-        "audio/zote/ZoteGrowl1.ogg",
-        "audio/zote/ZoteGrowl2.ogg",
-        "audio/zote/ZoteGrowl3.ogg"
+        "516407_26hollow-knight-sfx/Zote_complain_combined.wav",
+        "Hollow Knight Audio Files/Zote_02.wav",
+        "Hollow Knight Audio Files/Zote_03 #030084.wav"
     };
     public static final Array<Sound> zoteGrowlSounds = new Array<>();
 
-    // ── Custom cursor ───────────────────────────────────────────────────────
-    // [FIXED] Relying on Gdx.graphics.newCursor()/setCursor() to swap the OS
-    // hardware pointer turned out unreliable across drivers/OSes (silently
-    // ignored with no error, regardless of image size). Now we hide the native
-    // pointer with a 1x1 transparent cursor — about as minimal as an image can
-    // get, so it reliably applies everywhere — and AbstractScreen draws
-    // cursorTexture as a normal sprite at the mouse position every frame
-    // instead. That always works since it's just a texture draw, no OS/driver
-    // cursor support required.
+
     private static final String CURSOR_PATH = "ui/cursor-nail.png";
     public static Texture cursorTexture;
 
@@ -117,13 +104,7 @@ public class GameAssetManager {
         loadCursor();
     }
 
-    /**
-     * Hides the native OS pointer and loads the nail-cursor art as a plain
-     * texture so AbstractScreen can draw it as a sprite every frame — see the
-     * block comment above CURSOR_PATH for why we stopped using a hardware
-     * cursor. Defensive like the sound loading above: a missing/bad image
-     * logs an error and leaves the system cursor visible instead of crashing.
-     */
+
     private static void loadCursor() {
         try {
             cursorTexture = new Texture(Gdx.files.internal(CURSOR_PATH));
@@ -157,11 +138,6 @@ public class GameAssetManager {
         }
     }
 
-    /**
-     * Plays a one-shot SFX at (clip's own volume) × (player's SFX slider).
-     * No-op if the clip failed to load — every combat/movement call site can
-     * fire these freely without null-checking soundMap itself.
-     */
     public static void playSound(SoundType type) {
         if (type == null) return;
         Sound sound = soundMap.get(type);
@@ -169,12 +145,7 @@ public class GameAssetManager {
         sound.play(type.volume * masterSfxVolume());
     }
 
-    /**
-     * Starts looping `type`, stopping whatever was playing before it. Calling
-     * this again with the track that's already playing is a no-op, so
-     * GameScreen can call it every frame a room is active without restarting
-     * the track each time.
-     */
+
     public static void playMusic(MusicType type) {
         if (type == currentMusicType && currentMusic != null && currentMusic.isPlaying()) return;
         stopMusic();

@@ -22,13 +22,25 @@ public enum SoundType {
 
     // ── Enemies — shared ──────────────────────────────────────────────────────
     ENEMY_HIT("516407_26hollow-knight-sfx/boss_final_hit.wav", 0.55f),
+    BOSS_LEAP_LAND("516407_26hollow-knight-sfx/false_knight_land.wav", 0.55f),
+    BOSS_POWER_SLAM("516407_26hollow-knight-sfx/boss_final_hit.wav", 0.55f),
+    BOSS_MACE_WINDUP("516407_26hollow-knight-sfx/false_knight_strike_ground.wav", 0.55f),
+    BOSS_CHARGE("516407_26hollow-knight-sfx/false_knight_jump.wav", 0.55f),
+    BOSS_STUN("516407_26hollow-knight-sfx/boss_final_hit.wav", 0.55f),
 
     // ── Enemies — per-type death, paired 1:1 with the *_DEAD AnimationTypes ──
     CRAWLER_DEATH    ("516407_26hollow-knight-sfx/Boss Defeat.wav",    0.7f),
     SENTRY_DEATH     ("516407_26hollow-knight-sfx/Boss Defeat.wav",     0.7f),
-    FLYER_DEATH      ("516407_26hollow-knight-sfx/Boss Defeat.wav",      0.7f),
-    LASER_FLYER_DEATH("516407_26hollow-knight-sfx/Boss Defeat.wav", 0.7f),
+    FLYER_DEATH      ("Hollow Knight Audio Files/Col_flyer_death_02.wav",      0.7f),
+    LASER_FLYER_DEATH("Hollow Knight Audio Files/Col_flyer_death_02.wav", 0.7f),
     BOSS_DEATH       ("516407_26hollow-knight-sfx/Boss Defeat.wav",       1f),
+    BOSS_MACE_SLAM("516407_26hollow-knight-sfx/boss_final_hit.wav", 0.55f),
+
+
+    ZOTE_ENRAGE("516407_26hollow-knight-sfx/Zote_battle_attack_loop.wav",1f),
+
+    LASER_FLYER_CHARGE("Hollow Knight Audio Files/fly_flying.wav",1f),
+    LASER_FLYER_FIRE("Hollow Knight Audio Files/Galien_attack_03.wav",1f),
 
     // ── UI ───────────────────────────────────────────────────────────────────
     UI_CLICK ("Hollow Knight Audio Files/grass_cut_1.wav", 0.5f),

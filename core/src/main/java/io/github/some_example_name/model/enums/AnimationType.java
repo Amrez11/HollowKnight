@@ -41,7 +41,7 @@ public enum AnimationType {
     BOSS_DEF_LEAP(4,"animation/False_knight/Jump.png"),
     BOSS_POWER_RISE(8,"animation/False_knight/Jump Attack.png"),
     BOSS_POWER_FALL(8,"animation/False_knight/Jump Attack.png"),
-    BOSS_POWER_IMPACT(8,"animation/False_knight/Jump Attack.png"),
+    BOSS_POWER_IMPACT(8,"slash.png"),
     BOSS_STUN(5,"animation/False_knight/Body.png"),
     BOSS_DEAD(3,"animation/False_knight/DeathFall.png"),
     SENTRY_PATROL(7, "animation/Husk_Hornhead/Walk.png"),

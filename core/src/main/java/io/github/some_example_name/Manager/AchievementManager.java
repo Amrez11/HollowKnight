@@ -16,13 +16,6 @@ public class AchievementManager {
     private static final Set<Achievement> unlockedAchievements = new HashSet<>();
     private static final Set<String> enemiesDefeated = new HashSet<>();
 
-    // [FIXED] Unlocks used to live only in this static in-memory set (and,
-    // separately, inside whatever per-slot save file you manually wrote via
-    // the pause menu). That meant opening "Achievements" from the main menu —
-    // without having loaded a save this session — always showed everything
-    // locked, which looked exactly like "achievements don't get saved". This
-    // makes unlocks persist immediately, account-wide, independent of save
-    // slots, the moment they happen.
     private static final String PREFS_NAME = "hollow-knight-achievements";
     private static Preferences prefs;
 

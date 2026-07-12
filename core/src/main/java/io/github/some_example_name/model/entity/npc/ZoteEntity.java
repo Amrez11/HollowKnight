@@ -8,6 +8,7 @@ import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.entity.AttackHitbox;
 import io.github.some_example_name.model.entity.player.Entity;
 import io.github.some_example_name.model.enums.AnimationType;
+import io.github.some_example_name.model.enums.SoundType;
 
 
 public class ZoteEntity {
@@ -89,6 +90,7 @@ public class ZoteEntity {
         state       = State.ENRAGED;
         enrageTimer = ENRAGE_DURATION;
         setAnimation(AnimationType.ZOTE_ENRAGE_ATTACK);
+        GameAssetManager.playSound(SoundType.ZOTE_ENRAGE);
 
         // Zote "attacks" but the strike is famously ineffectual — 0 damage.
         // Still a real hitbox through the normal DamageResolver pipeline, so

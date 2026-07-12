@@ -10,18 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 import io.github.some_example_name.controller.SettingsMenuController;
 
-/**
- * Screen-wide brightness dimmer.
- *
- * Added once per screen (see AbstractScreen.show()), sitting above the
- * screen's own content but below the modal layer, so pause/settings panels
- * stay fully readable no matter how low brightness is set.
- *
- * It reads SettingsMenuController.getInstance() fresh every frame, so
- * dragging the Brightness slider updates whatever screen you're looking at
- * immediately — main menu, gameplay, load screen, all of it — not just
- * one specific screen.
- */
+
 public class BrightnessOverlay extends Actor {
 
     private static final Texture WHITE_PIXEL;

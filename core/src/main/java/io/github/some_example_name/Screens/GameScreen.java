@@ -45,17 +45,13 @@ public class GameScreen extends AbstractScreen{
     private GameProcessor gameProcessor;
     private final Game game;
 
-    // ── Camera shake ─────────────────────────────────────────────────────────
-    // shakeMagnitude is the peak offset in pixels; shakeTimer/shakeDuration
-    // together drive a linear decay from full strength down to 0 so the shake
-    // eases out instead of cutting off abruptly.
+
     private float shakeTimer     = 0f;
     private float shakeDuration  = 0f;
     private float shakeMagnitude = 0f;
 
     private void triggerShake(float duration, float magnitude) {
-        // Only replace an in-progress shake with a stronger one — a boss slam
-        // shouldn't get swallowed by a weaker hit-flinch shake still playing.
+
         if (magnitude >= shakeMagnitude || shakeTimer <= 0f) {
             shakeDuration  = duration;
             shakeTimer     = duration;
@@ -68,10 +64,8 @@ public class GameScreen extends AbstractScreen{
     private OrthogonalTiledMapRenderer mapRenderer;
 
     private Array<Rectangle> cameraBounds;
-    private HashMap<Rectangle, Texture> roomBackgrounds; // Holds the custom backgrounds
-    private HashMap<Rectangle, MusicType> roomMusic;      // Which track loops while the player is in each room
-    // The camera-bound room the player was inside last frame. Used to detect
-    // the moment they leave a room, so its dead enemies can be respawned.
+    private HashMap<Rectangle, Texture> roomBackgrounds;
+    private HashMap<Rectangle, MusicType> roomMusic;
     private Rectangle previousBound;
 
     private TiledMapHelper mapHelper;
@@ -334,8 +328,7 @@ public class GameScreen extends AbstractScreen{
             }
         }
 
-        // Shake is applied last, after room clamping, so it isn't clamped away
-        // and so it offsets whatever position the camera settled on this frame.
+
         if (shakeTimer > 0f) {
             shakeTimer -= delta;
             float t   = Math.max(0f, shakeTimer / shakeDuration); // 1 -> 0

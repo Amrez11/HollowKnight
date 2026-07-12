@@ -19,14 +19,7 @@ import io.github.some_example_name.Manager.CharmManager;
 import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.model.enums.Charm;
 
-/**
- * Inventory / charm menu. Opened with 'I' from GameProcessor.
- * Pauses the game while open (caller is responsible for toggling Game.setPaused).
- * Clicking a charm equips/unequips it (max CharmManager.MAX_NOTCHES at once).
- * Hovering a charm shows its description in the footer label.
- * The Back button (or clicking outside the panel) closes the menu — override
- * onClose() to know when that happens.
- */
+
 public class CharmMenuModal extends Modal {
 
     private static final Texture NOTCH_EMPTY    = new Texture("ui/charm-notch-empty.png");

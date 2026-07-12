@@ -27,7 +27,7 @@ public class LoadMenuScreen extends AbstractScreen {
 
 
 
-        background = new Texture("h/Menu/vheart_save_Switch.png");
+        background = new Texture("background.png");
         rootTable.setBackground(
             new TextureRegionDrawable(
                 new TextureRegion(background)

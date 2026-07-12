@@ -33,7 +33,7 @@ public class MainMenuScreen extends AbstractScreen   {
         Stack stack =new  Stack();
 
 
-        background = new Texture("h/Menu/vheart_save_Switch.png");
+        background = new Texture("background.png");
         rootTable.setBackground(
             new TextureRegionDrawable(
                 new TextureRegion(background)

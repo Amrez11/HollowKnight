@@ -16,73 +16,80 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 
 import io.github.some_example_name.Manager.GameAssetManager;
 import io.github.some_example_name.controller.SettingsMenuController;
 
-/**
- * Settings panel shown as an overlay (Modal) instead of a full Screen.
- * That means it can be opened from the pause menu mid-game OR from the
- * main menu, and in both cases pressing Back just removes the overlay and
- * drops you back exactly where you were — no screen swap, no losing the
- * paused game underneath.
- *
- * Music/SFX/Brightness all read & write through the SettingsMenuController
- * passed in, so changes (in particular brightness) are visible immediately
- * to whatever is reading that same controller instance (see GameScreen).
- */
 public class SettingsModal extends Modal {
 
     private static final Texture PANEL_BG = new Texture("ui/stone-tablet-bg.png");
-
-    // --- Cached slider visuals (built once, reused for every instance) ---
     private static Slider.SliderStyle sliderStyle;
 
     private static Slider.SliderStyle sliderStyle() {
         if (sliderStyle != null) return sliderStyle;
 
-        int trackWidth = 360;
-        int trackHeight = 22;
+        int trackWidth = 350;
+        int trackHeight = 16;
+        int radius = trackHeight / 2; // 8px radius
 
+        // 1. Empty Track (Dark Stone Gray)
         Pixmap trackPixmap = new Pixmap(trackWidth, trackHeight, Pixmap.Format.RGBA8888);
-        trackPixmap.setColor(new Color(0.15f, 0.15f, 0.18f, 1));
-        trackPixmap.fill();
-        trackPixmap.setColor(new Color(0.4f, 0.4f, 0.45f, 1));
-        trackPixmap.fillRectangle(6, 0, trackWidth - 12, trackHeight);
-        trackPixmap.fillCircle(6, trackHeight / 2, 6);
-        trackPixmap.fillCircle(trackWidth - 6, trackHeight / 2, 6);
-        NinePatch trackPatch = new NinePatch(new Texture(trackPixmap), 6, 6, 6, 6);
+        trackPixmap.setColor(new Color(0.2f, 0.2f, 0.22f, 0.8f));
+        trackPixmap.fillRectangle(radius, 0, trackWidth - (radius * 2), trackHeight);
+        trackPixmap.fillCircle(radius, radius, radius);
+        trackPixmap.fillCircle(trackWidth - radius, radius, radius);
+
+        NinePatch trackPatch = new NinePatch(new Texture(trackPixmap), radius, radius, 0, 0);
+        NinePatchDrawable trackDrawable = new NinePatchDrawable(trackPatch);
+
+        // THE FIX: Force the boundaries to 0 so the knob can reach the absolute edge
+        trackDrawable.setLeftWidth(0);
+        trackDrawable.setRightWidth(0);
+        trackDrawable.setMinHeight(trackHeight);
+
         trackPixmap.dispose();
 
+        // 2. Filled Track (Glowing Cyan/Blue)
         Pixmap filledPixmap = new Pixmap(trackWidth, trackHeight, Pixmap.Format.RGBA8888);
-        filledPixmap.setColor(new Color(0.85f, 0.65f, 0.1f, 1));
-        filledPixmap.fill();
-        filledPixmap.setColor(new Color(1f, 0.84f, 0.2f, 1));
-        filledPixmap.fillRectangle(6, 0, trackWidth - 12, trackHeight);
-        filledPixmap.fillCircle(6, trackHeight / 2, 6);
-        filledPixmap.fillCircle(trackWidth - 6, trackHeight / 2, 6);
-        NinePatch filledPatch = new NinePatch(new Texture(filledPixmap), 6, 6, 6, 6);
+        filledPixmap.setColor(new Color(0.2f, 0.7f, 1f, 1f));
+        filledPixmap.fillRectangle(radius, 0, trackWidth - (radius * 2), trackHeight);
+        filledPixmap.fillCircle(radius, radius, radius);
+        filledPixmap.fillCircle(trackWidth - radius, radius, radius);
+
+        NinePatch filledPatch = new NinePatch(new Texture(filledPixmap), radius, radius, 0, 0);
+        NinePatchDrawable filledDrawable = new NinePatchDrawable(filledPatch);
+
+        // THE FIX: Apply the same zero-width boundaries to the filled portion
+        filledDrawable.setLeftWidth(0);
+        filledDrawable.setRightWidth(0);
+        filledDrawable.setMinHeight(trackHeight);
+
         filledPixmap.dispose();
 
-        int knobSize = 22;
+        // 3. Knob (White/Light Blue)
+        int knobSize = 20;
         Pixmap knobPixmap = new Pixmap(knobSize, knobSize, Pixmap.Format.RGBA8888);
-        knobPixmap.setColor(new Color(1f, 0.9f, 0.4f, 1));
+        knobPixmap.setColor(new Color(0.9f, 0.95f, 1f, 1f));
         knobPixmap.fillCircle(knobSize / 2, knobSize / 2, knobSize / 2 - 1);
-        knobPixmap.setColor(new Color(0.6f, 0.45f, 0f, 1));
+        knobPixmap.setColor(new Color(0.4f, 0.6f, 0.8f, 1f));
         knobPixmap.drawCircle(knobSize / 2, knobSize / 2, knobSize / 2 - 1);
         Texture knobTexture = new Texture(knobPixmap);
         knobPixmap.dispose();
 
+        // 4. Assemble the Style
         Slider.SliderStyle style = new Slider.SliderStyle();
-        style.background = new NinePatchDrawable(trackPatch);
-        style.background.setMinHeight(trackHeight);
-        style.knobBefore = new NinePatchDrawable(filledPatch);
-        style.knobBefore.setMinHeight(trackHeight);
-        style.knob = new TextureRegionDrawable(new TextureRegion(knobTexture));
-        style.knob.setMinWidth(knobSize);
-        style.knob.setMinHeight(knobSize);
-        style.knobOver = style.knob;
-        style.knobDown = style.knob;
+
+        style.background = trackDrawable;
+        style.knobBefore = filledDrawable;
+
+        TextureRegionDrawable knobDrawable = new TextureRegionDrawable(new TextureRegion(knobTexture));
+        knobDrawable.setMinWidth(knobSize);
+        knobDrawable.setMinHeight(knobSize);
+
+        style.knob = knobDrawable;
+        style.knobOver = knobDrawable;
+        style.knobDown = knobDrawable;
 
         sliderStyle = style;
         return sliderStyle;
@@ -95,27 +102,19 @@ public class SettingsModal extends Modal {
         this.controller = controller;
         setTouchable(Touchable.enabled);
         background(new TextureRegionDrawable(new TextureRegion(PANEL_BG)));
-        pad(30);
+        pad(40);
 
-        Label title = new Label("Settings", GameAssetManager.labelStyle);
+        Label title = new Label("SETTINGS", GameAssetManager.labelStyle);
+        title.setAlignment(Align.center);
 
-        Label musicLabel = smallLabel("Music");
-        Label sfxLabel = smallLabel("SFX");
-        Label brightnessLabel = smallLabel("Brightness");
-        Label languageLabel = smallLabel("Language");
-
+        // UI Components
         Label musicValue = smallLabel(pct(controller.getMusicVolume()));
         Label sfxValue = smallLabel(pct(controller.getSfxVolume()));
         Label brightnessValue = smallLabel(pct(controller.getBrightness()));
 
-        Slider musicSlider = new Slider(0f, 1f, 0.01f, false, sliderStyle());
-        musicSlider.setValue(controller.getMusicVolume());
-
-        Slider sfxSlider = new Slider(0f, 1f, 0.01f, false, sliderStyle());
-        sfxSlider.setValue(controller.getSfxVolume());
-
-        Slider brightnessSlider = new Slider(0f, 1f, 0.01f, false, sliderStyle());
-        brightnessSlider.setValue(controller.getBrightness());
+        Slider musicSlider = createSlider(controller.getMusicVolume());
+        Slider sfxSlider = createSlider(controller.getSfxVolume());
+        Slider brightnessSlider = createSlider(controller.getBrightness());
 
         TextButton musicMuteBtn = smallButton(controller.isMusicMuted() ? "Unmute" : "Mute");
         TextButton sfxMuteBtn = smallButton(controller.isSfxMuted() ? "Unmute" : "Mute");
@@ -125,6 +124,7 @@ public class SettingsModal extends Modal {
         TextButton languageBtn = smallButton(controller.getLanguageName());
         TextButton backButton = smallButton("Back");
 
+        // Listeners
         musicSlider.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
                 controller.setMusicVolume(musicSlider.getValue());
@@ -185,7 +185,6 @@ public class SettingsModal extends Modal {
                 brightnessValue.setText(pct(controller.getBrightness()));
             }
         });
-        // Cosmetic only — cycles the label, doesn't retranslate anything yet.
         languageBtn.addListener(new ClickListener() {
             @Override public void clicked(InputEvent event, float x, float y) {
                 languageBtn.setText(controller.cycleLanguage());
@@ -197,37 +196,39 @@ public class SettingsModal extends Modal {
             }
         });
 
-        defaults().space(14);
-        add(title).colspan(4).padBottom(20).row();
+        // --- LAYOUT ---
+        defaults().space(15).padBottom(5);
 
-        add(musicLabel).left().width(140);
-        add(musicSlider).width(300).height(28);
-        add(musicValue).width(60);
-        Table musicBtns = new Table();
-        musicBtns.defaults().space(8);
-        musicBtns.add(musicMuteBtn).width(100).height(48);
-        musicBtns.add(musicResetBtn).width(90).height(48);
-        add(musicBtns).row();
+        add(title).colspan(4).padBottom(30).center().row();
 
-        add(sfxLabel).left().width(140);
-        add(sfxSlider).width(300).height(28);
-        add(sfxValue).width(60);
-        Table sfxBtns = new Table();
-        sfxBtns.defaults().space(8);
-        sfxBtns.add(sfxMuteBtn).width(100).height(48);
-        sfxBtns.add(sfxResetBtn).width(90).height(48);
-        add(sfxBtns).row();
+        addRow("MUSIC", musicSlider, musicValue, musicMuteBtn, musicResetBtn);
+        addRow("SFX", sfxSlider, sfxValue, sfxMuteBtn, sfxResetBtn);
+        addRow("BRIGHTNESS", brightnessSlider, brightnessValue, null, brightnessResetBtn);
 
-        add(brightnessLabel).left().width(140);
-        add(brightnessSlider).width(300).height(28);
-        add(brightnessValue).width(60);
-        add(brightnessResetBtn).width(90).height(48).row();
+        // Language Row
+        add(smallLabel("LANGUAGE")).left().padRight(20);
+        add(languageBtn).width(180).height(45).left().colspan(3);
+        row();
 
-        add(languageLabel).left().width(140);
-        add(languageBtn).width(180).height(48).colspan(2).left();
-        add().row();
+        add(backButton).colspan(4).width(200).height(50).padTop(30).center();
+    }
 
-        add(backButton).colspan(4).width(220).height(56).padTop(20);
+    private void addRow(String labelText, Slider slider, Label valLabel, TextButton btn1, TextButton btn2) {
+        add(smallLabel(labelText)).left().padRight(20);
+        add(slider).width(280).height(24).padRight(15);
+        add(valLabel).width(50).left();
+
+        Table btnTable = new Table();
+        btnTable.defaults().space(10);
+        if (btn1 != null) btnTable.add(btn1).width(90).height(40);
+        if (btn2 != null) btnTable.add(btn2).width(90).height(40);
+        add(btnTable).right().row();
+    }
+
+    private Slider createSlider(float initialValue) {
+        Slider slider = new Slider(0f, 1f, 0.01f, false, sliderStyle());
+        slider.setValue(initialValue);
+        return slider;
     }
 
     private static Label smallLabel(String text) {
@@ -237,7 +238,7 @@ public class SettingsModal extends Modal {
     }
 
     private TextButton smallButton(String text) {
-        TextButton button = new TextButton(text, textButtonStyle);
+        TextButton button = new TextButton(text, textButtonStyle); // Uses your existing textButtonStyle
         button.getLabel().setFontScale(0.45f);
         return button;
     }

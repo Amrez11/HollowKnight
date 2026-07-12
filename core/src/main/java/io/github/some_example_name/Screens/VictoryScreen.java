@@ -40,7 +40,7 @@ public class VictoryScreen extends AbstractScreen {
         TextButton restartBtn = new TextButton("Restart Game", textButtonStyle);
         TextButton menuBtn = new TextButton("Main Menu", textButtonStyle);
 
-        // Restart logic: clear stats and load a fresh GameScreen
+
         restartBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
